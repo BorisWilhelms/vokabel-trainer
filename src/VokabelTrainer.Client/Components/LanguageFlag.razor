@@ -1,0 +1,8 @@
+@if (!string.IsNullOrEmpty(FlagSvg))
+{
+    @((MarkupString)FlagSvg)
+}
+
+@code {
+    [Parameter] public string? FlagSvg { get; set; }
+}

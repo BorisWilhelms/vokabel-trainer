@@ -1,0 +1,7 @@
+<MudNavMenu>
+    <MudNavLink Href="/" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+    <AuthorizeView Roles="Admin">
+        <MudNavLink Href="/admin/users" Icon="@Icons.Material.Filled.People">Benutzer</MudNavLink>
+        <MudNavLink Href="/admin/languages" Icon="@Icons.Material.Filled.Language">Sprachen</MudNavLink>
+    </AuthorizeView>
+</MudNavMenu>
