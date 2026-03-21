@@ -25,10 +25,9 @@ Web-basierter Vokabeltrainer fuer eine Gymnasialschuelerin (9. Klasse), Schwerpu
 
 ### Admin-Oberflaeche (minimal)
 
-- Benutzer anlegen (Username eingeben → wird zur Whitelist hinzugefuegt)
-- Benutzer loeschen
-- Passwort zuruecksetzen (loescht PasswordHash, User wird erneut zur Passwortvergabe aufgefordert)
-- Kein Seed ueber appsettings.json noetig — alles ueber die Admin-UI.
+- **Benutzer:** Anlegen, loeschen, Passwort zuruecksetzen
+- **Sprachen:** Anlegen, bearbeiten, loeschen. Pro Sprache: Code, Anzeigename, Flaggen-SVG.
+- Kein Seed ueber appsettings.json noetig — alles ueber die Admin-UI. Beim ersten Start (leere DB) muessen nach dem Admin-Setup zuerst Sprachen angelegt werden, bevor Listen erstellt werden koennen.
 
 ## Datenmodell
 
@@ -41,14 +40,24 @@ Web-basierter Vokabeltrainer fuer eine Gymnasialschuelerin (9. Klasse), Schwerpu
 | IsInitialized | bool | Passwort gesetzt? |
 | Role | enum | Admin / User |
 
+### Language
+| Feld | Typ | Beschreibung |
+|------|-----|-------------|
+| Id | int (PK) | |
+| Code | string | ISO-artig, z.B. "la", "en", "de". Unique. |
+| DisplayName | string | z.B. "Latein", "Englisch", "Deutsch" |
+| FlagSvg | string? | SVG-Markup fuer die Flagge |
+
+Wird ueber die Admin-UI gepflegt. Beim Erstellen einer Liste waehlt der User aus den vorhandenen Sprachen.
+
 ### VocabularyList
 | Feld | Typ | Beschreibung |
 |------|-----|-------------|
 | Id | int (PK) | |
 | UserId | int (FK) | Besitzer |
 | Name | string | z.B. "Latein Lektion 12" |
-| SourceLanguage | string | z.B. "Latein" |
-| TargetLanguage | string | z.B. "Deutsch" |
+| SourceLanguageId | int (FK) | Referenz auf Language |
+| TargetLanguageId | int (FK) | Referenz auf Language |
 | CreatedAt | datetime | |
 
 Listen sind privat pro Benutzer.
