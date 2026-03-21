@@ -44,9 +44,10 @@ public class AuthController(AuthService authService) : ControllerBase
     [Authorize]
     public IActionResult Me()
     {
-        var username = User.Identity?.Name;
-        var role = User.FindFirst(ClaimTypes.Role)?.Value;
-        return Ok(new { username, role });
+        var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        var username = User.Identity!.Name!;
+        var role = Enum.Parse<Shared.Models.UserRole>(User.FindFirst(ClaimTypes.Role)!.Value);
+        return Ok(new AuthResponse(userId, username, role, false));
     }
 
     [HttpGet("needs-setup")]
