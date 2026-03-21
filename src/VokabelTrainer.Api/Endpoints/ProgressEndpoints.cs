@@ -8,6 +8,18 @@ public static class ProgressEndpoints
 {
     public static WebApplication MapProgressEndpoints(this WebApplication app)
     {
+        app.MapGet("/progress", async (ProgressService progressService, HttpContext ctx) =>
+        {
+            var userId = ctx.GetUserId();
+            var progress = await progressService.GetGlobalProgressAsync(userId);
+
+            return new RazorComponentResult<Progress>(new
+            {
+                ProgressData = progress,
+                IsAdmin = ctx.User.IsInRole("Admin")
+            });
+        }).RequireAuthorization();
+
         app.MapGet("/progress/{listId:int}", async (int listId, ProgressService progressService, HttpContext ctx) =>
         {
             var userId = ctx.GetUserId();

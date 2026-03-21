@@ -59,4 +59,51 @@ public class ProgressService(AppDbContext db)
 
         return new ListProgressDto(listId, list.Name, boxDist, sessions.Count, sessions, problemVocab);
     }
+
+    public async Task<ListProgressDto> GetGlobalProgressAsync(int userId)
+    {
+        var allVocabIds = await db.Vocabularies
+            .Where(v => v.List.UserId == userId)
+            .Select(v => v.Id)
+            .ToListAsync();
+
+        var boxEntries = await db.BoxEntries
+            .Where(b => b.UserId == userId)
+            .ToListAsync();
+
+        var boxDist = new BoxDistributionDto(
+            boxEntries.Count(b => b.Box == 1),
+            boxEntries.Count(b => b.Box == 2),
+            boxEntries.Count(b => b.Box == 3),
+            boxEntries.Count(b => b.Box == 4),
+            boxEntries.Count(b => b.Box == 5));
+
+        var sessions = await db.TrainingSessions
+            .Where(s => s.UserId == userId && s.CompletedAt != null)
+            .OrderBy(s => s.StartedAt)
+            .Select(s => new SessionHistoryEntryDto(
+                s.Id,
+                s.StartedAt,
+                s.TotalQuestions > 0 ? Math.Round((double)s.CorrectAnswers / s.TotalQuestions * 100, 1) : 0))
+            .ToListAsync();
+
+        var wrongCounts = await db.TrainingAnswers
+            .Where(a => !a.IsCorrect && allVocabIds.Contains(a.VocabularyId))
+            .GroupBy(a => a.VocabularyId)
+            .Select(g => new { VocabularyId = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .Take(10)
+            .ToListAsync();
+
+        var problemVocab = new List<ProblemVocabularyDto>();
+        foreach (var wc in wrongCounts)
+        {
+            var vocab = await db.Vocabularies.FindAsync(wc.VocabularyId);
+            var box = boxEntries.FirstOrDefault(b => b.VocabularyId == wc.VocabularyId)?.Box ?? 1;
+            if (vocab is not null)
+                problemVocab.Add(new ProblemVocabularyDto(vocab.Term, wc.Count, box));
+        }
+
+        return new ListProgressDto(0, "Gesamtfortschritt", boxDist, sessions.Count, sessions, problemVocab);
+    }
 }
