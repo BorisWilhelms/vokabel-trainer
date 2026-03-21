@@ -3,7 +3,6 @@
 
 @inject ApiClient ApiClient
 @inject NavigationManager NavigationManager
-@inject IJSRuntime JS
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-4">
     @if (_loading)
@@ -44,14 +43,17 @@
             <MudText Typo="Typo.h4">@_question.Prompt</MudText>
         </MudPaper>
 
-        <MudTextField @bind-Value="_answer"
-                      Label="Antwort"
-                      Variant="Variant.Outlined"
-                      AutoFocus="true"
-                      Immediate="true"
-                      OnKeyDown="OnKeyDown"
-                      Disabled="_submitting"
-                      Class="mb-4" />
+        <MudFocusTrap DefaultFocus="DefaultFocus.FirstChild">
+            <MudTextField T="string"
+                          Value="@_answer"
+                          ValueChanged="OnAnswerChanged"
+                          Label="Antwort"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          OnKeyDown="OnKeyDown"
+                          Disabled="_submitting"
+                          Class="mb-4" />
+        </MudFocusTrap>
 
         <MudStack Row="true" Spacing="2">
             <MudButton Variant="Variant.Filled"
@@ -94,6 +96,11 @@
         await LoadNextQuestion();
     }
 
+    private void OnAnswerChanged(string value)
+    {
+        _answer = value;
+    }
+
     private async Task LoadNextQuestion()
     {
         var question = await ApiClient.GetNextQuestionAsync(SessionId);
@@ -106,9 +113,6 @@
         _question = question;
         _answer = string.Empty;
         _loading = false;
-        StateHasChanged();
-        await Task.Delay(100);
-        await JS.InvokeVoidAsync("eval", "document.querySelector('.mud-input-slot')?.focus()");
     }
 
     private async Task OnKeyDown(KeyboardEventArgs e)
