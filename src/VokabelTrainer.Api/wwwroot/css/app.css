@@ -16,6 +16,89 @@
     --vt-shadow-hover: 0 4px 20px rgba(43, 45, 66, 0.12);
 }
 
+/* === Dark theme overrides === */
+[data-theme="dark"] {
+    --vt-bg: #1a1a2e;
+    --vt-text: #e0e0e0;
+    --vt-text-muted: #9a9a9a;
+    --vt-sand: #252540;
+    --vt-cream: #2a2a45;
+    --vt-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    --vt-shadow-hover: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] .title,
+[data-theme="dark"] .subtitle {
+    color: #b8d8c8;
+}
+
+[data-theme="dark"] .card {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .card-footer-item:hover {
+    background-color: var(--vt-sand);
+}
+
+[data-theme="dark"] .input,
+[data-theme="dark"] .textarea,
+[data-theme="dark"] .select select {
+    background-color: var(--vt-sand);
+    border-color: #444;
+    color: var(--vt-text);
+}
+
+[data-theme="dark"] .label {
+    color: var(--vt-text);
+}
+
+[data-theme="dark"] .prompt-card {
+    background: linear-gradient(135deg, #252540 0%, #2a2a45 100%);
+    border-color: #555;
+}
+
+[data-theme="dark"] .prompt-card .prompt-word {
+    color: #b8d8c8;
+}
+
+[data-theme="dark"] .notification.is-success {
+    background-color: #1a3a2a;
+    color: #a8d8b8;
+}
+
+[data-theme="dark"] .notification.is-danger {
+    background-color: #3a1a1a;
+    color: #d8a8a8;
+}
+
+[data-theme="dark"] .notification.is-info {
+    background-color: #1a2a3a;
+    color: #a8c8d8;
+}
+
+[data-theme="dark"] .notification.is-warning {
+    background-color: #3a3a1a;
+    color: #d8d8a8;
+}
+
+[data-theme="dark"] .table thead th {
+    background-color: var(--vt-sand);
+    color: #b8d8c8;
+    border-bottom-color: var(--vt-forest);
+}
+
+[data-theme="dark"] .table.is-striped tbody tr:nth-child(even) {
+    background-color: rgba(37, 37, 64, 0.5);
+}
+
+[data-theme="dark"] .message.is-info .message-body {
+    background-color: var(--vt-sand);
+    color: var(--vt-text);
+}
+
 /* === Base === */
 html, body {
     min-height: 100vh;

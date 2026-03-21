@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" data-theme="light">
+<html lang="de">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,6 +12,15 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/favicon.png" />
     <meta name="theme-color" content="#2d6a4f" />
+    <script>
+        (function() {
+            var saved = localStorage.getItem('theme');
+            if (saved === 'light' || saved === 'dark') {
+                document.documentElement.setAttribute('data-theme', saved);
+            }
+            // If no saved preference, Bulma uses system default automatically
+        })();
+    </script>
 </head>
 <body>
     @if (ShowNavbar)
@@ -37,6 +46,11 @@
                     }
                 </div>
                 <div class="navbar-end">
+                    <div class="navbar-item">
+                        <button class="button is-small" onclick="toggleTheme()" id="theme-toggle" title="Theme wechseln">
+                            <span id="theme-icon">🌙</span>
+                        </button>
+                    </div>
                     <div class="navbar-item">
                         <form method="post" action="/logout">
                             <button type="submit" class="button is-light is-small">Abmelden</button>
@@ -66,6 +80,25 @@
     </section>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script>navigator.serviceWorker?.register('/service-worker.js');</script>
+    <script>
+        function getEffectiveTheme() {
+            var saved = localStorage.getItem('theme');
+            if (saved === 'light' || saved === 'dark') return saved;
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        function updateThemeIcon() {
+            var icon = document.getElementById('theme-icon');
+            if (icon) icon.textContent = getEffectiveTheme() === 'dark' ? '☀️' : '🌙';
+        }
+        function toggleTheme() {
+            var current = getEffectiveTheme();
+            var next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            updateThemeIcon();
+        }
+        updateThemeIcon();
+    </script>
 </body>
 </html>
 
