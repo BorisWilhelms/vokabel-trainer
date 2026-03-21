@@ -6,7 +6,7 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
+    <MudAppBar Elevation="1" Fixed="true">
         <MudIconButton Icon="@Icons.Material.Filled.Menu"
                        Color="Color.Inherit" Edge="Edge.Start"
                        OnClick="@ToggleDrawer" />
@@ -18,7 +18,7 @@
     <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
         <NavBar />
     </MudDrawer>
-    <MudMainContent Class="pa-4">
+    <MudMainContent Class="px-4 pb-4">
         @Body
     </MudMainContent>
 </MudLayout>
