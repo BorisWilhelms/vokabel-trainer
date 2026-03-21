@@ -8,6 +8,26 @@
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-4">
     <MudText Typo="Typo.h5" Class="mb-4">Training starten</MudText>
 
+    @if (_listSummary is not null)
+    {
+        <MudCard Class="mb-4">
+            <MudCardContent>
+                <MudText Typo="Typo.h6">@_listSummary.Name</MudText>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mt-2">
+                    <LanguageFlag FlagSvg="@_listSummary.SourceFlagSvg" />
+                    <MudText Typo="Typo.body2">@_listSummary.SourceLanguageName</MudText>
+                    <MudText Typo="Typo.body2">→</MudText>
+                    <LanguageFlag FlagSvg="@_listSummary.TargetFlagSvg" />
+                    <MudText Typo="Typo.body2">@_listSummary.TargetLanguageName</MudText>
+                </MudStack>
+                <MudText Typo="Typo.body2" Class="mt-1">@_listSummary.VocabularyCount Vokabeln</MudText>
+                <div class="mt-2">
+                    <BoxDistribution Distribution="@_listSummary.BoxDistribution" />
+                </div>
+            </MudCardContent>
+        </MudCard>
+    }
+
     <MudStack Spacing="4" @onkeydown="OnKeyDown">
         <MudRadioGroup @bind-Value="_mode">
             <MudRadio Value="TrainingMode.SinglePass" Color="Color.Primary">Einmal durch</MudRadio>
@@ -35,9 +55,19 @@
 @code {
     [Parameter] public int? ListId { get; set; }
 
+    private VocabularyListSummaryDto? _listSummary;
     private TrainingMode _mode = TrainingMode.SinglePass;
     private int? _maxVocabulary;
     private bool _starting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ListId.HasValue)
+        {
+            var lists = await ApiClient.GetListsAsync();
+            _listSummary = lists.FirstOrDefault(l => l.Id == ListId.Value);
+        }
+    }
 
     private async Task OnKeyDown(KeyboardEventArgs e)
     {
