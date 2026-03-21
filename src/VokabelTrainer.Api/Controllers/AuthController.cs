@@ -42,12 +42,16 @@ public class AuthController(AuthService authService) : ControllerBase
 
     [HttpGet("me")]
     [Authorize]
-    public IActionResult Me()
+    public async Task<IActionResult> Me()
     {
         var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        var username = User.Identity!.Name!;
-        var role = Enum.Parse<Shared.Models.UserRole>(User.FindFirst(ClaimTypes.Role)!.Value);
-        return Ok(new AuthResponse(userId, username, role, false));
+        var user = await authService.GetByIdAsync(userId);
+        if (user is null)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return Unauthorized();
+        }
+        return Ok(new AuthResponse(user.Id, user.Username, user.Role, false));
     }
 
     [HttpGet("needs-setup")]

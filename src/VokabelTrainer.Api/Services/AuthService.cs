@@ -7,6 +7,11 @@ using VokabelTrainer.Shared.Models;
 
 public class AuthService(AppDbContext db)
 {
+    public async Task<User?> GetByIdAsync(int id)
+    {
+        return await db.Users.FindAsync(id);
+    }
+
     public async Task<bool> NeedsInitialSetupAsync()
     {
         return !await db.Users.AnyAsync();
