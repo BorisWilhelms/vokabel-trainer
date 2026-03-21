@@ -64,7 +64,10 @@
                         <td>
                             <div class="buttons are-small">
                                 <a href="/admin/languages?edit=@lang.Id" class="button is-small is-info">Bearbeiten</a>
-                                <form method="post" action="/admin/languages/@lang.Id/delete">
+                                <form method="post" action="/admin/languages/@lang.Id/generate-flag" style="display:inline">
+                                    <button type="submit" class="button is-small is-primary is-light">Flagge generieren</button>
+                                </form>
+                                <form method="post" action="/admin/languages/@lang.Id/delete" style="display:inline">
                                     <button type="submit" class="button is-small is-danger" onclick="return confirm('Sprache wirklich loeschen?')">Loeschen</button>
                                 </form>
                             </div>

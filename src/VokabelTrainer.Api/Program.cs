@@ -63,7 +63,7 @@ builder.Services.AddScoped<VocabularyListService>();
 builder.Services.AddScoped<TrainingService>();
 builder.Services.AddScoped<LeitnerService>();
 builder.Services.AddScoped<ProgressService>();
-builder.Services.AddSingleton<OcrService>();
+builder.Services.AddSingleton<AiService>();
 builder.Services.AddHttpClient();
 
 var app = builder.Build();

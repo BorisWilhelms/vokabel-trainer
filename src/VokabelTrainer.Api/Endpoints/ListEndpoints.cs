@@ -13,7 +13,7 @@ public static class ListEndpoints
         {
             var languages = await languageService.GetAllAsync();
 
-            var ocrService = ctx.RequestServices.GetRequiredService<OcrService>();
+            var aiService = ctx.RequestServices.GetRequiredService<AiService>();
             return new RazorComponentResult<ListEditor>(new
             {
                 Id = (int?)null,
@@ -23,7 +23,7 @@ public static class ListEndpoints
                 RawVocabulary = "",
                 Languages = languages,
                 IsAdmin = ctx.User.IsInRole("Admin"),
-                OcrEnabled = ocrService.IsConfigured
+                OcrEnabled = aiService.IsConfigured
             });
         }).RequireAuthorization();
 
@@ -40,7 +40,7 @@ public static class ListEndpoints
             var rawVocabulary = string.Join("\n",
                 list.Entries.Select(e => $"{e.Term} = {string.Join(", ", e.Translations)}"));
 
-            var ocrService = ctx.RequestServices.GetRequiredService<OcrService>();
+            var aiService = ctx.RequestServices.GetRequiredService<AiService>();
             return new RazorComponentResult<ListEditor>(new
             {
                 Id = (int?)id,
@@ -50,7 +50,7 @@ public static class ListEndpoints
                 RawVocabulary = rawVocabulary,
                 Languages = languages,
                 IsAdmin = ctx.User.IsInRole("Admin"),
-                OcrEnabled = ocrService.IsConfigured
+                OcrEnabled = aiService.IsConfigured
             });
         }).RequireAuthorization();
 
@@ -86,7 +86,7 @@ public static class ListEndpoints
             return Results.Redirect("/");
         }).RequireAuthorization().DisableAntiforgery();
 
-        app.MapPost("/lists/ocr", async (HttpContext ctx, OcrService ocrService) =>
+        app.MapPost("/lists/ocr", async (HttpContext ctx, AiService aiService) =>
         {
             var form = await ctx.Request.ReadFormAsync();
             var files = form.Files;
@@ -105,7 +105,7 @@ public static class ListEndpoints
                 var bytes = ms.ToArray();
                 var mimeType = file.ContentType ?? "image/jpeg";
 
-                var result = await ocrService.ExtractVocabularyAsync(bytes, mimeType);
+                var result = await aiService.ExtractVocabularyAsync(bytes, mimeType);
                 if (result is not null)
                 {
                     allLines.Add(result);

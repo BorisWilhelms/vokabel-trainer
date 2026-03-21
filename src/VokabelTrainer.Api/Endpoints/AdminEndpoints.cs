@@ -112,6 +112,22 @@ public static class AdminEndpoints
             return Results.Redirect("/admin/languages");
         }).RequireAuthorization("AdminOnly").DisableAntiforgery();
 
+        app.MapPost("/admin/languages/{id:int}/generate-flag", async (int id, LanguageService languageService, AiService aiService) =>
+        {
+            var languages = await languageService.GetAllAsync();
+            var lang = languages.FirstOrDefault(l => l.Id == id);
+            if (lang is null)
+                return Results.Redirect("/admin/languages");
+
+            var svg = await aiService.GenerateFlagSvgAsync(lang.DisplayName, lang.Code);
+            if (svg is not null)
+            {
+                await languageService.UpdateAsync(id, new UpdateLanguageRequest(lang.Code, lang.DisplayName, svg));
+            }
+
+            return Results.Redirect($"/admin/languages?edit={id}");
+        }).RequireAuthorization("AdminOnly").DisableAntiforgery();
+
         return app;
     }
 }
