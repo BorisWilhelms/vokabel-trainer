@@ -325,3 +325,7 @@ h1, h2, h3, .title, .subtitle {
     border-color: var(--vt-forest);
     color: var(--vt-text);
 }
+
+/* === Language flags === */
+.language-flag { display: inline-block; vertical-align: middle; }
+.language-flag svg { width: 24px; height: 16px; vertical-align: middle; }
