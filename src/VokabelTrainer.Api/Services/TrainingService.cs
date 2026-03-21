@@ -131,10 +131,13 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
         var translations = JsonSerializer.Deserialize<List<string>>(vocab.Translations)!;
         var prompt = direction == Direction.SourceToTarget ? vocab.Term : translations[Rng.Next(translations.Count)];
 
-        var totalCount = session.Mode == TrainingMode.Endlos
+        var totalDue = session.Mode == TrainingMode.Endlos
             ? dueEntries.Count + correctlyAnsweredIds.Count
             : await CountTotalDueAsync(session);
-        var currentIndex = correctlyAnsweredIds.Count + 1;
+        var totalCount = session.MaxVocabulary.HasValue
+            ? Math.Min(session.MaxVocabulary.Value, totalDue)
+            : totalDue;
+        var currentIndex = distinctAskedCount + 1;
 
         return new TrainingQuestionDto(
             session.Id, vocab.Id, prompt, direction,
