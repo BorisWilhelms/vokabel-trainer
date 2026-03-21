@@ -72,9 +72,7 @@
             <div class="control">
                 <button type="submit" class="button is-primary">Pruefen</button>
             </div>
-            @if (IsEndlos)
-            {
-                <div class="control">
+            <div class="control">
                     <button type="button" class="button is-warning is-outlined"
                             hx-post="/training/@SessionId/submit"
                             hx-target="#content"
@@ -83,7 +81,6 @@
                         Abbrechen
                     </button>
                 </div>
-            }
         </div>
     </form>
     <script>window._questionStart = Date.now();</script>
