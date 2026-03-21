@@ -281,6 +281,25 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
             Math.Round(successRate, 1), wrongAnswers);
     }
 
+    public async Task CompleteSessionIfNeededAsync(int sessionId)
+    {
+        var session = await db.TrainingSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+        if (session is null || session.CompletedAt.HasValue) return;
+
+        session.CompletedAt = DateTime.UtcNow;
+        if (session.ListId.HasValue)
+            await leitner.DecrementSessionCountersAsync(session.UserId, session.ListId.Value);
+        else
+        {
+            var listIds = await db.VocabularyLists
+                .Where(l => l.UserId == session.UserId)
+                .Select(l => l.Id).ToListAsync();
+            foreach (var lid in listIds)
+                await leitner.DecrementSessionCountersAsync(session.UserId, lid);
+        }
+        await db.SaveChangesAsync();
+    }
+
     public async Task AbortSessionAsync(int sessionId)
     {
         var session = await db.TrainingSessions.FirstAsync(s => s.Id == sessionId);

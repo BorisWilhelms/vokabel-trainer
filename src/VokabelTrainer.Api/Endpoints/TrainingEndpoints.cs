@@ -40,6 +40,7 @@ public static class TrainingEndpoints
             var question = await trainingService.GetNextQuestionAsync(sessionId);
             if (question is null)
             {
+                await trainingService.CompleteSessionIfNeededAsync(sessionId);
                 return Results.Redirect($"/training/result/{sessionId}");
             }
 
@@ -62,6 +63,8 @@ public static class TrainingEndpoints
 
         app.MapGet("/training/result/{sessionId:int}", async (int sessionId, TrainingService trainingService, HttpContext ctx) =>
         {
+            // Ensure session is completed (handles cases where user navigated away)
+            await trainingService.CompleteSessionIfNeededAsync(sessionId);
             var result = await trainingService.GetSessionResultAsync(sessionId);
 
             return new RazorComponentResult<SessionResult>(new
