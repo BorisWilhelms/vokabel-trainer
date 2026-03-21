@@ -43,7 +43,7 @@
             <MudText Typo="Typo.h4">@_question.Prompt</MudText>
         </MudPaper>
 
-        <MudFocusTrap DefaultFocus="DefaultFocus.FirstChild">
+        <MudFocusTrap @key="_question.VocabularyId" DefaultFocus="DefaultFocus.FirstChild">
             <MudTextField T="string"
                           Value="@_answer"
                           ValueChanged="OnAnswerChanged"
