@@ -8,7 +8,7 @@
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-4">
     <MudText Typo="Typo.h5" Class="mb-4">Training starten</MudText>
 
-    <MudStack Spacing="4">
+    <MudStack Spacing="4" @onkeydown="OnKeyDown">
         <MudRadioGroup @bind-Value="_mode">
             <MudRadio Value="TrainingMode.SinglePass" Color="Color.Primary">Einmal durch</MudRadio>
             <MudRadio Value="TrainingMode.Endlos" Color="Color.Primary">Endlos</MudRadio>
@@ -38,6 +38,11 @@
     private TrainingMode _mode = TrainingMode.SinglePass;
     private int? _maxVocabulary;
     private bool _starting;
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await StartTraining();
+    }
 
     private async Task StartTraining()
     {

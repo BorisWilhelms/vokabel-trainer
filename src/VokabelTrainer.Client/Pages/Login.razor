@@ -6,7 +6,7 @@
 @inject NavigationManager NavigationManager
 
 <MudContainer MaxWidth="MaxWidth.ExtraSmall" Class="mt-16">
-    <MudCard>
+    <MudCard @onkeydown="OnKeyDown">
         <MudCardContent>
             <MudText Typo="Typo.h5" Class="mb-4">@(_needsSetup ? "Admin erstellen" : "Anmelden")</MudText>
 
@@ -59,6 +59,11 @@
     protected override async Task OnInitializedAsync()
     {
         _needsSetup = await ApiClient.NeedsSetupAsync();
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await HandleSubmit();
     }
 
     private async Task HandleSubmit()
