@@ -48,13 +48,13 @@
         <div class="field">
             <label class="label">Importieren</label>
             <div class="control buttons">
-                <label class="button is-outlined">
+                <label class="button is-light">
                     <span>CSV importieren</span>
                     <input type="file" accept=".csv" onchange="handleCsvImport(this)" style="display:none" />
                 </label>
                 @if (OcrEnabled)
                 {
-                    <label class="button is-outlined" id="ocr-btn">
+                    <label class="button is-primary is-light" id="ocr-btn">
                         <span>Foto(s) scannen</span>
                         <input type="file" accept="image/*" multiple onchange="handleOcrImport(this)" style="display:none" />
                     </label>
