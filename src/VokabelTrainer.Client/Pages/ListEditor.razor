@@ -49,6 +49,17 @@
                           Lines="10"
                           Placeholder="Eine Vokabel pro Zeile: Begriff = Uebersetzung1, Uebersetzung2" />
 
+            <MudFileUpload T="IBrowserFile" Accept=".csv" FilesChanged="OnCsvFileSelected">
+                <CustomContent Context="upload">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Secondary"
+                               StartIcon="@Icons.Material.Filled.UploadFile"
+                               OnClick="@upload.OpenFilePickerAsync">
+                        Import aus CSV
+                    </MudButton>
+                </CustomContent>
+            </MudFileUpload>
+
             <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
                 <MudButton Variant="Variant.Outlined"
                            OnClick="@Cancel">
@@ -122,6 +133,119 @@
         {
             _saving = false;
         }
+    }
+
+    private async Task OnCsvFileSelected(IBrowserFile file)
+    {
+        try
+        {
+            using var stream = file.OpenReadStream();
+            using var reader = new System.IO.StreamReader(stream);
+            var content = await reader.ReadToEndAsync();
+            var lines = content.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+            if (lines.Length == 0) return;
+
+            var startIndex = 0;
+
+            // Check if first line is a header
+            var firstLine = lines[0];
+            if (!firstLine.Contains('=') && lines.Length > 1)
+            {
+                // Looks like a header row — try to use it for language hints and list name
+                startIndex = 1;
+
+                // Set list name from filename (without extension)
+                if (string.IsNullOrWhiteSpace(_name))
+                {
+                    _name = System.IO.Path.GetFileNameWithoutExtension(file.Name);
+                }
+
+                // Try to match header columns to languages
+                var headerParts = ParseCsvLine(firstLine);
+                if (headerParts.Length >= 2)
+                {
+                    var sourceLang = _languages.FirstOrDefault(l =>
+                        l.DisplayName.Equals(headerParts[0], StringComparison.OrdinalIgnoreCase) ||
+                        l.Code.Equals(headerParts[0], StringComparison.OrdinalIgnoreCase));
+                    var targetLang = _languages.FirstOrDefault(l =>
+                        l.DisplayName.Equals(headerParts[1], StringComparison.OrdinalIgnoreCase) ||
+                        l.Code.Equals(headerParts[1], StringComparison.OrdinalIgnoreCase));
+
+                    if (sourceLang is not null) _sourceLanguageId = sourceLang.Id;
+                    if (targetLang is not null) _targetLanguageId = targetLang.Id;
+                }
+            }
+
+            // Parse data rows: CSV → "term = translation" format
+            var vocabLines = new List<string>();
+            for (var i = startIndex; i < lines.Length; i++)
+            {
+                var parts = ParseCsvLine(lines[i]);
+                if (parts.Length >= 2)
+                {
+                    var term = parts[0].Trim();
+                    var translation = parts[1].Trim();
+                    if (term.Length > 0 && translation.Length > 0)
+                    {
+                        vocabLines.Add($"{term} = {translation}");
+                    }
+                }
+            }
+
+            if (vocabLines.Count > 0)
+            {
+                _rawVocabulary = string.IsNullOrWhiteSpace(_rawVocabulary)
+                    ? string.Join("\n", vocabLines)
+                    : _rawVocabulary + "\n" + string.Join("\n", vocabLines);
+
+                Snackbar.Add($"{vocabLines.Count} Vokabeln aus CSV importiert.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Keine Vokabeln in der CSV gefunden.", Severity.Warning);
+            }
+        }
+        catch
+        {
+            Snackbar.Add("CSV konnte nicht gelesen werden.", Severity.Error);
+        }
+    }
+
+    private static string[] ParseCsvLine(string line)
+    {
+        var result = new List<string>();
+        var current = new System.Text.StringBuilder();
+        var inQuotes = false;
+
+        for (var i = 0; i < line.Length; i++)
+        {
+            var c = line[i];
+            if (c == '"')
+            {
+                if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
+                {
+                    current.Append('"');
+                    i++; // skip escaped quote
+                }
+                else
+                {
+                    inQuotes = !inQuotes;
+                }
+            }
+            else if (c == ',' && !inQuotes)
+            {
+                result.Add(current.ToString());
+                current.Clear();
+            }
+            else
+            {
+                current.Append(c);
+            }
+        }
+        result.Add(current.ToString());
+
+        return result.ToArray();
     }
 
     private void Cancel()
