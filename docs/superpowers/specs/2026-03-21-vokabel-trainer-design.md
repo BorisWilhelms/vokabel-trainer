@@ -18,10 +18,17 @@ Web-basierter Vokabeltrainer fuer eine Gymnasialschuelerin (9. Klasse), Schwerpu
 
 ## Authentifizierung
 
-- Keine vollstaendige Benutzerverwaltung. Whitelist DB-basiert, initialer Seed ueber appsettings.json.
-- Cookie-basierte Authentifizierung. Kein ASP.NET Identity — eigener Auth-Handler gegen die Whitelist.
+- Cookie-basierte Authentifizierung. Kein ASP.NET Identity — eigener Auth-Handler.
 - Beim ersten Login mit bekanntem Benutzernamen wird ein Passwort gesetzt. Danach Login mit Benutzername + Passwort.
-- **Passwort-Reset:** Kein Self-Service. Admin loescht PasswordHash in der DB, User wird erneut zur Passwortvergabe aufgefordert.
+- **Admin-Setup:** Wenn die DB keine Benutzer enthaelt, wird der erste Login automatisch zum Admin. Admin setzt sein Passwort wie jeder andere User.
+- **Rollen:** Zwei Rollen — Admin und User. Rolle wird im User-Modell gespeichert.
+
+### Admin-Oberflaeche (minimal)
+
+- Benutzer anlegen (Username eingeben → wird zur Whitelist hinzugefuegt)
+- Benutzer loeschen
+- Passwort zuruecksetzen (loescht PasswordHash, User wird erneut zur Passwortvergabe aufgefordert)
+- Kein Seed ueber appsettings.json noetig — alles ueber die Admin-UI.
 
 ## Datenmodell
 
@@ -29,9 +36,10 @@ Web-basierter Vokabeltrainer fuer eine Gymnasialschuelerin (9. Klasse), Schwerpu
 | Feld | Typ | Beschreibung |
 |------|-----|-------------|
 | Id | int (PK) | |
-| Username | string | Aus Whitelist bekannt |
+| Username | string | |
 | PasswordHash | string? | Null bis zum ersten Login |
 | IsInitialized | bool | Passwort gesetzt? |
+| Role | enum | Admin / User |
 
 ### VocabularyList
 | Feld | Typ | Beschreibung |
@@ -139,13 +147,14 @@ Nach jeder abgeschlossenen Session wird SessionsUntilReview fuer **alle** Vokabe
 
 ## UI-Screens
 
-1. **Login** — Benutzername + Passwort. Erster Login setzt Passwort.
-2. **Dashboard** — Listenuebersicht mit Leitner-Box-Balken, Flaggen pro Sprache. Buttons: Trainieren, Bearbeiten, Fortschritt. Button fuer neue Liste.
+1. **Login** — Benutzername + Passwort. Erster Login setzt Passwort. Erster User ueberhaupt wird Admin.
+2. **Dashboard** — Listenuebersicht mit Leitner-Box-Balken, Flaggen pro Sprache. Buttons: Trainieren, Bearbeiten, Fortschritt. Button fuer neue Liste. Admin sieht zusaetzlich Link zur Admin-Oberflaeche.
 3. **Liste erstellen/bearbeiten** — Name, Sprachen (Dropdowns), Texteingabe: eine Vokabel pro Zeile im Format `Begriff = Uebersetzung1, Uebersetzung2`. Verschiedene Trennzeichen werden akzeptiert.
 4. **Training starten** — Moduswahl (Einmal/Endlos), optionale Vokabelanzahl.
 5. **Training** — Karte mit Richtungsanzeige (Flaggen), Eingabefeld, sofortiges Feedback, Box-Update-Anzeige, Fortschrittsanzeige (x/n).
 6. **Session-Ergebnis** — Prozent, falsch beantwortete mit Loesung, Buttons fuer "Nochmal" und "Zurueck".
 7. **Fortschritt** — Box-Verteilung mit Erklaerung, Erfolgsquote-Verlauf, Problemvokabeln.
+8. **Admin** — (nur fuer Admins) Liste aller Benutzer, Buttons: Neuen Benutzer anlegen, Passwort zuruecksetzen, Benutzer loeschen.
 
 ## Technische Details
 
