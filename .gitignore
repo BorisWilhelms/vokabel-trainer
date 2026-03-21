@@ -1,5 +1,6 @@
 .worktrees/
 .superpowers/
+.references/
 vokabeltrainer.db
 
 ## Ignore Visual Studio temporary files, build results, and
