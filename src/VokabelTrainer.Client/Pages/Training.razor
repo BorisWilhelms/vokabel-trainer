@@ -48,9 +48,9 @@
                       Label="Antwort"
                       Variant="Variant.Outlined"
                       AutoFocus="true"
+                      Immediate="true"
                       OnKeyDown="OnKeyDown"
                       Disabled="_submitting"
-                      id="answer-input"
                       Class="mb-4" />
 
         <MudStack Row="true" Spacing="2">
@@ -107,8 +107,8 @@
         _answer = string.Empty;
         _loading = false;
         StateHasChanged();
-        await Task.Delay(50);
-        await JS.InvokeVoidAsync("eval", "document.getElementById('answer-input')?.focus()");
+        await Task.Delay(100);
+        await JS.InvokeVoidAsync("eval", "document.querySelector('.mud-input-slot')?.focus()");
     }
 
     private async Task OnKeyDown(KeyboardEventArgs e)
