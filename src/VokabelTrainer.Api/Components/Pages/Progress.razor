@@ -1,0 +1,100 @@
+@page "/progress/{ListId:int}"
+@attribute [Authorize]
+@inject ProgressService ProgressService
+@inject IHttpContextAccessor HttpContextAccessor
+
+@if (progress is null)
+{
+    <div class="notification is-warning">Liste nicht gefunden.</div>
+    <a href="/" class="button">Zurueck</a>
+}
+else
+{
+    <h1 class="title">@progress.ListName</h1>
+
+    <LeitnerExplanation />
+
+    <div class="box">
+        <h2 class="subtitle">Box-Verteilung</h2>
+        <BoxDistribution Distribution="@progress.BoxDistribution" />
+        <div class="columns mt-3 has-text-centered">
+            <div class="column"><span class="tag is-danger">Box 1: @progress.BoxDistribution.Box1</span></div>
+            <div class="column"><span class="tag is-warning">Box 2: @progress.BoxDistribution.Box2</span></div>
+            <div class="column"><span class="tag is-info">Box 3: @progress.BoxDistribution.Box3</span></div>
+            <div class="column"><span class="tag is-primary">Box 4: @progress.BoxDistribution.Box4</span></div>
+            <div class="column"><span class="tag is-success">Box 5: @progress.BoxDistribution.Box5</span></div>
+        </div>
+    </div>
+
+    <div class="box">
+        <h2 class="subtitle">Trainingshistorie</h2>
+        <p class="mb-3">Gesamt: <strong>@progress.TotalSessions</strong> Sitzungen</p>
+        @if (progress.SessionHistory.Count > 0)
+        {
+            <table class="table is-fullwidth is-striped">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Datum</th>
+                        <th>Erfolgsquote</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < progress.SessionHistory.Count; i++)
+                    {
+                        var session = progress.SessionHistory[i];
+                        <tr>
+                            <td>@(i + 1)</td>
+                            <td>@session.Date.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td>@session.SuccessRate.ToString("0.0")%</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p class="has-text-grey">Noch keine Sitzungen absolviert.</p>
+        }
+    </div>
+
+    @if (progress.ProblemVocabulary.Count > 0)
+    {
+        <div class="box">
+            <h2 class="subtitle">Problemvokabeln</h2>
+            <table class="table is-fullwidth is-striped">
+                <thead>
+                    <tr>
+                        <th>Begriff</th>
+                        <th>Falsch-Anzahl</th>
+                        <th>Aktuelle Box</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var vocab in progress.ProblemVocabulary)
+                    {
+                        <tr>
+                            <td>@vocab.Term</td>
+                            <td>@vocab.TimesWrong</td>
+                            <td>@vocab.CurrentBox</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <a href="/" class="button">Zurueck</a>
+}
+
+@code {
+    [Parameter] public int ListId { get; set; }
+
+    private ListProgressDto? progress;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userId = int.Parse(HttpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+        progress = await ProgressService.GetListProgressAsync(userId, ListId);
+    }
+}

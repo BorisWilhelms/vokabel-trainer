@@ -1,0 +1,157 @@
+@page "/admin/languages"
+@attribute [Authorize(Roles = "Admin")]
+@inject LanguageService LanguageService
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager NavigationManager
+
+<h1 class="title">Sprachen</h1>
+
+@if (errorMessage is not null)
+{
+    <div class="notification is-danger">@errorMessage</div>
+}
+
+<div class="box">
+    <h2 class="subtitle">@(editLanguage is not null ? "Sprache bearbeiten" : "Neue Sprache anlegen")</h2>
+    <form method="post" @formname="save-language" @onsubmit="HandleSave">
+        <AntiforgeryToken />
+        @if (editLanguage is not null)
+        {
+            <input type="hidden" name="EditId" value="@editLanguage.Id" />
+        }
+        <div class="field">
+            <label class="label">Code</label>
+            <div class="control">
+                <input type="text" name="FormCode" class="input" placeholder="z.B. de, en, la" value="@(editLanguage?.Code ?? FormCode)" />
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Name</label>
+            <div class="control">
+                <input type="text" name="FormDisplayName" class="input" placeholder="z.B. Deutsch" value="@(editLanguage?.DisplayName ?? FormDisplayName)" />
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Flagge (SVG)</label>
+            <div class="control">
+                <textarea name="FormFlagSvg" class="textarea" rows="4" placeholder="SVG-Code der Flagge">@(editLanguage?.FlagSvg ?? FormFlagSvg)</textarea>
+            </div>
+        </div>
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">
+                    @(editLanguage is not null ? "Speichern" : "Anlegen")
+                </button>
+            </div>
+            @if (editLanguage is not null)
+            {
+                <div class="control">
+                    <a href="/admin/languages" class="button">Abbrechen</a>
+                </div>
+            }
+        </div>
+    </form>
+</div>
+
+@if (languages is not null)
+{
+    <table class="table is-fullwidth is-striped">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Flagge</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var lang in languages)
+            {
+                <tr>
+                    <td>@lang.Code</td>
+                    <td>@lang.DisplayName</td>
+                    <td><LanguageFlag FlagSvg="@lang.FlagSvg" /></td>
+                    <td>
+                        <div class="buttons are-small">
+                            <a href="/admin/languages?edit=@lang.Id" class="button is-small is-info">Bearbeiten</a>
+                            <form method="post" @formname="@($"delete-{lang.Id}")" @onsubmit="HandleDelete">
+                                <AntiforgeryToken />
+                                <input type="hidden" name="DeleteId" value="@lang.Id" />
+                                <button type="submit" class="button is-small is-danger" onclick="return confirm('Sprache wirklich loeschen?')">Loeschen</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<LanguageDto>? languages;
+    private LanguageDto? editLanguage;
+    private string? errorMessage;
+
+    [SupplyParameterFromQuery(Name = "edit")]
+    private int? EditQueryId { get; set; }
+
+    [SupplyParameterFromForm(FormName = "save-language")]
+    private string? FormCode { get; set; }
+
+    [SupplyParameterFromForm(FormName = "save-language")]
+    private string? FormDisplayName { get; set; }
+
+    [SupplyParameterFromForm(FormName = "save-language")]
+    private string? FormFlagSvg { get; set; }
+
+    [SupplyParameterFromForm(FormName = "save-language")]
+    private int? EditId { get; set; }
+
+    [SupplyParameterFromForm]
+    private int? DeleteId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        languages = await LanguageService.GetAllAsync();
+
+        if (EditQueryId.HasValue)
+        {
+            editLanguage = languages.FirstOrDefault(l => l.Id == EditQueryId.Value);
+        }
+    }
+
+    private async Task HandleSave()
+    {
+        if (string.IsNullOrWhiteSpace(FormCode) || string.IsNullOrWhiteSpace(FormDisplayName))
+        {
+            errorMessage = "Code und Name sind erforderlich.";
+            return;
+        }
+
+        if (EditId.HasValue)
+        {
+            await LanguageService.UpdateAsync(EditId.Value, new UpdateLanguageRequest(FormCode, FormDisplayName, FormFlagSvg));
+        }
+        else
+        {
+            await LanguageService.CreateAsync(new CreateLanguageRequest(FormCode, FormDisplayName, FormFlagSvg));
+        }
+
+        NavigationManager.NavigateTo("/admin/languages", forceLoad: true);
+    }
+
+    private async Task HandleDelete()
+    {
+        if (DeleteId is null) return;
+
+        var success = await LanguageService.DeleteAsync(DeleteId.Value);
+        if (!success)
+        {
+            errorMessage = "Sprache kann nicht geloescht werden, da sie noch verwendet wird.";
+            languages = await LanguageService.GetAllAsync();
+            return;
+        }
+
+        NavigationManager.NavigateTo("/admin/languages", forceLoad: true);
+    }
+}
