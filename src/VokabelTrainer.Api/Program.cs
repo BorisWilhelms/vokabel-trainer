@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using VokabelTrainer.Api.Data;
+using VokabelTrainer.Api.Data.Entities;
 using VokabelTrainer.Api.Endpoints;
 using VokabelTrainer.Api.Services;
 
@@ -65,11 +66,21 @@ builder.Services.AddScoped<ProgressService>();
 
 var app = builder.Build();
 
-// Auto-migrate on startup
+// Auto-migrate and seed on startup
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+    if (!db.Languages.Any())
+    {
+        db.Languages.AddRange(
+            new Language { Code = "la", DisplayName = "Latein" },
+            new Language { Code = "de", DisplayName = "Deutsch" },
+            new Language { Code = "en", DisplayName = "Englisch" }
+        );
+        db.SaveChanges();
+    }
 }
 
 app.UseStaticFiles();
