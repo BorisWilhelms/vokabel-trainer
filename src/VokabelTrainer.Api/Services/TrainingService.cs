@@ -270,7 +270,7 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
                 var vocab = g.First().Vocabulary;
                 var translations = JsonSerializer.Deserialize<List<string>>(vocab.Translations)!;
                 var last = g.Last();
-                return new WrongAnswerDto(vocab.Term, translations, last.GivenAnswer, last.ResponseSeconds);
+                return new WrongAnswerDto(vocab.Term, translations, last.GivenAnswer, last.ResponseSeconds, vocab.Hint);
             })
             .ToList();
 

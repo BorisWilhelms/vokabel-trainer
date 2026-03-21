@@ -31,7 +31,13 @@
                         @foreach (var wrong in Result.WrongAnswers)
                         {
                             <tr>
-                                <td>@wrong.Term</td>
+                                <td>
+                                    @wrong.Term
+                                    @if (wrong.Hint is not null)
+                                    {
+                                        <br/><small class="has-text-info">💡 @wrong.Hint</small>
+                                    }
+                                </td>
                                 <td>@string.Join(", ", wrong.CorrectTranslations)</td>
                                 <td class="has-text-danger">@wrong.GivenAnswer</td>
                                 <td>@(wrong.ResponseSeconds.HasValue ? $"{wrong.ResponseSeconds.Value:0.0}s" : "—")</td>

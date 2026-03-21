@@ -79,6 +79,37 @@ public class AiService(IConfiguration config, IHttpClientFactory httpClientFacto
         return result;
     }
 
+    public async Task<string?> GenerateHintAsync(string term, List<string> translations, string sourceLanguage, string targetLanguage)
+    {
+        var translationsStr = string.Join(", ", translations);
+        var prompt = $"""
+            Ein Schueler (14 Jahre, Gymnasium) lernt Vokabeln.
+            Erstelle eine kurze, einpraegsame Eselsbruecke/Merkhilfe fuer:
+
+            {term} ({sourceLanguage}) = {translationsStr} ({targetLanguage})
+
+            Die Merkhilfe soll:
+            - Maximal 1-2 Saetze lang sein
+            - Kreativ und einpraegsam sein (Wortaehnlichkeiten, Bilder, Assoziationen)
+            - Auf Deutsch formuliert sein
+            - Keine Erklaerung drumherum, nur die Merkhilfe selbst
+            """;
+
+        var messages = new[]
+        {
+            new
+            {
+                role = "user",
+                content = new object[]
+                {
+                    new { type = "text", text = prompt }
+                }
+            }
+        };
+
+        return await CallAsync(config["OpenRouter:TextModel"] ?? "google/gemini-2.5-flash", messages);
+    }
+
     private async Task<string?> CallAsync(string model, object messages)
     {
         var apiKey = config["OpenRouter:ApiKey"];

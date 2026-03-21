@@ -1,6 +1,6 @@
 namespace VokabelTrainer.Api.Models.Training;
 
-public record WrongAnswerDto(string Term, List<string> CorrectTranslations, string GivenAnswer, double? ResponseSeconds);
+public record WrongAnswerDto(string Term, List<string> CorrectTranslations, string GivenAnswer, double? ResponseSeconds, string? Hint);
 
 public record SessionResultDto(
     int SessionId,

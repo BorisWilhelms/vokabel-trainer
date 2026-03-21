@@ -1,5 +1,8 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using VokabelTrainer.Api.Components.Pages;
+using VokabelTrainer.Api.Data;
 using VokabelTrainer.Api.Models;
 using VokabelTrainer.Api.Models.Lists;
 using VokabelTrainer.Api.Services;
@@ -35,7 +38,7 @@ public static class TrainingEndpoints
         }).RequireAuthorization();
 
         app.MapGet("/training/{sessionId:int}", async (int sessionId, TrainingService trainingService, HttpContext ctx,
-            string? mode, string? fc, string? fa, string? fp, string? fg) =>
+            string? mode, string? fc, string? fa, string? fp, string? fg, string? fh) =>
         {
             var question = await trainingService.GetNextQuestionAsync(sessionId);
             if (question is null)
@@ -55,6 +58,7 @@ public static class TrainingEndpoints
                 FeedbackAnswers = fa,
                 FeedbackPrompt = fp,
                 FeedbackGiven = fg,
+                FeedbackHint = fh,
                 Mode = mode,
                 IsEndlos = isEndlos,
                 IsAdmin = ctx.User.IsInRole("Admin")
@@ -100,7 +104,7 @@ public static class TrainingEndpoints
             return Results.Redirect($"/training/{sessionId}?mode={mode}");
         }).RequireAuthorization().DisableAntiforgery();
 
-        app.MapPost("/training/{sessionId:int}/submit", async (int sessionId, HttpContext ctx, TrainingService trainingService) =>
+        app.MapPost("/training/{sessionId:int}/submit", async (int sessionId, HttpContext ctx, TrainingService trainingService, AiService aiService, AppDbContext db) =>
         {
             var form = await ctx.Request.ReadFormAsync();
             var action = form["Action"].FirstOrDefault();
@@ -123,6 +127,28 @@ public static class TrainingEndpoints
                 var direction = (Direction)dirInt;
                 var feedback = await trainingService.SubmitAnswerAsync(sessionId, vocabId, direction, answer, responseSeconds);
 
+                // Generate hint for wrong answers if not already present
+                if (!feedback.IsCorrect && aiService.IsConfigured)
+                {
+                    var vocab = await db.Vocabularies
+                        .Include(v => v.List).ThenInclude(l => l.SourceLanguage)
+                        .Include(v => v.List).ThenInclude(l => l.TargetLanguage)
+                        .FirstOrDefaultAsync(v => v.Id == vocabId);
+                    if (vocab is not null && vocab.Hint is null)
+                    {
+                        var translations = JsonSerializer.Deserialize<List<string>>(vocab.Translations)!;
+                        var hint = await aiService.GenerateHintAsync(
+                            vocab.Term, translations,
+                            vocab.List.SourceLanguage.DisplayName,
+                            vocab.List.TargetLanguage.DisplayName);
+                        if (hint is not null)
+                        {
+                            vocab.Hint = hint;
+                            await db.SaveChangesAsync();
+                        }
+                    }
+                }
+
                 if (feedback.SessionComplete)
                 {
                     return Results.Redirect($"/training/result/{sessionId}");
@@ -133,8 +159,19 @@ public static class TrainingEndpoints
                 var prompt = Uri.EscapeDataString(form["PreviousPrompt"].FirstOrDefault() ?? "");
                 var givenAnswer = Uri.EscapeDataString(answer);
 
+                // Include hint in redirect if available
+                var hintParam = "";
+                if (!feedback.IsCorrect)
+                {
+                    var vocabForHint = await db.Vocabularies.FindAsync(vocabId);
+                    if (vocabForHint?.Hint is not null)
+                    {
+                        hintParam = $"&fh={Uri.EscapeDataString(vocabForHint.Hint)}";
+                    }
+                }
+
                 return Results.Redirect(
-                    $"/training/{sessionId}?mode={mode}&fc={correct}&fa={correctAnswers}&fp={prompt}&fg={givenAnswer}");
+                    $"/training/{sessionId}?mode={mode}&fc={correct}&fa={correctAnswers}&fp={prompt}&fg={givenAnswer}{hintParam}");
             }
 
             return Results.Redirect($"/training/{sessionId}?mode={mode}");
