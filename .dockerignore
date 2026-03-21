@@ -1,0 +1,14 @@
+**/.git
+**/.worktrees
+**/.superpowers
+**/.references
+**/bin
+**/obj
+**/node_modules
+**/*.db
+**/docs
+**/tests
+*.md
+.gitignore
+.dockerignore
+anforderungen.md
