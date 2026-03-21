@@ -1,31 +1,28 @@
 <PageLayout IsAdmin="@IsAdmin">
-    @if (FeedbackCorrect.HasValue)
+    @if (Feedback is not null)
     {
-        <div class="notification @(FeedbackCorrect.Value ? "is-success" : "is-danger") mb-4">
-            @if (FeedbackCorrect.Value)
+        <div class="notification @(Feedback.IsCorrect ? "is-success" : "is-danger") mb-4">
+            @if (Feedback.IsCorrect)
             {
-                <p><strong>Richtig!</strong> @FeedbackPrompt</p>
+                <p><strong>Richtig!</strong> @Feedback.Prompt</p>
             }
             else
             {
-                <p><strong>Falsch!</strong> @FeedbackPrompt &rarr; <strong>@FeedbackAnswers</strong></p>
-                <p class="is-size-7">Deine Antwort: @FeedbackGiven</p>
-                @if (FeedbackHint is not null)
+                <p><strong>Falsch!</strong> @Feedback.Prompt &rarr; <strong>@Feedback.CorrectAnswers</strong></p>
+                <p class="is-size-7">Deine Antwort: @Feedback.GivenAnswer</p>
+                @if (Feedback.Hint is not null)
                 {
                     <p class="is-size-7 mt-1">
-                        💡 @FeedbackHint
-                        @if (FeedbackVocabId.HasValue)
-                        {
-                            <form method="post" action="/training/@SessionId/regenerate-hint/@FeedbackVocabId" style="display:inline">
-                                <input type="hidden" name="Mode" value="@Mode" />
-                                <input type="hidden" name="fa" value="@FeedbackAnswers" />
-                                <input type="hidden" name="fp" value="@FeedbackPrompt" />
-                                <input type="hidden" name="fg" value="@FeedbackGiven" />
-                                <button type="submit" class="button is-ghost is-small p-0 ml-2" style="height:auto;text-decoration:underline;">
-                                    neuer Hinweis
-                                </button>
-                            </form>
-                        }
+                        💡 @Feedback.Hint
+                        <form method="post" action="/training/@SessionId/regenerate-hint/@Feedback.VocabId" style="display:inline">
+                            <input type="hidden" name="Mode" value="@Mode" />
+                            <input type="hidden" name="FeedbackPrompt" value="@Feedback.Prompt" />
+                            <input type="hidden" name="FeedbackAnswers" value="@Feedback.CorrectAnswers" />
+                            <input type="hidden" name="FeedbackGiven" value="@Feedback.GivenAnswer" />
+                            <button type="submit" class="button is-ghost is-small p-0 ml-2" style="height:auto;text-decoration:underline;">
+                                neuer Hinweis
+                            </button>
+                        </form>
                     </p>
                 }
             }
@@ -93,15 +90,12 @@
     }
 </PageLayout>
 
+@using VokabelTrainer.Api.Endpoints
+
 @code {
     [Parameter] public int SessionId { get; set; }
     [Parameter] public TrainingQuestionDto? Question { get; set; }
-    [Parameter] public bool? FeedbackCorrect { get; set; }
-    [Parameter] public string? FeedbackAnswers { get; set; }
-    [Parameter] public string? FeedbackPrompt { get; set; }
-    [Parameter] public string? FeedbackGiven { get; set; }
-    [Parameter] public string? FeedbackHint { get; set; }
-    [Parameter] public int? FeedbackVocabId { get; set; }
+    [Parameter] public AnswerFeedback? Feedback { get; set; }
     [Parameter] public string? Mode { get; set; }
     [Parameter] public bool IsEndlos { get; set; }
     [Parameter] public bool IsAdmin { get; set; }

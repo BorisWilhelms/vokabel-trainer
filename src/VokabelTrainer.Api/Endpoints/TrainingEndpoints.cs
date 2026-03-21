@@ -37,8 +37,7 @@ public static class TrainingEndpoints
             });
         }).RequireAuthorization();
 
-        app.MapGet("/training/{sessionId:int}", async (int sessionId, TrainingService trainingService, HttpContext ctx,
-            string? mode, string? fc, string? fa, string? fp, string? fg, string? fh, int? fv) =>
+        app.MapGet("/training/{sessionId:int}", async (int sessionId, TrainingService trainingService, HttpContext ctx, string? mode) =>
         {
             var question = await trainingService.GetNextQuestionAsync(sessionId);
             if (question is null)
@@ -47,19 +46,13 @@ public static class TrainingEndpoints
                 return Results.Redirect($"/training/result/{sessionId}");
             }
 
-            bool? feedbackCorrect = fc is not null ? fc == "1" : null;
             var isEndlos = string.Equals(mode, "Endlos", StringComparison.OrdinalIgnoreCase);
 
             return new RazorComponentResult<Training>(new
             {
                 SessionId = sessionId,
                 Question = question,
-                FeedbackCorrect = feedbackCorrect,
-                FeedbackAnswers = fa,
-                FeedbackPrompt = fp,
-                FeedbackGiven = fg,
-                FeedbackHint = fh,
-                FeedbackVocabId = fv,
+                Feedback = (AnswerFeedback?)null,
                 Mode = mode,
                 IsEndlos = isEndlos,
                 IsAdmin = ctx.User.IsInRole("Admin")
@@ -68,12 +61,10 @@ public static class TrainingEndpoints
 
         app.MapGet("/training/result/{sessionId:int}", async (int sessionId, TrainingService trainingService, ProgressService progressService, HttpContext ctx) =>
         {
-            // Ensure session is completed (handles cases where user navigated away)
             await trainingService.CompleteSessionIfNeededAsync(sessionId);
             var result = await trainingService.GetSessionResultAsync(sessionId);
             var userId = ctx.GetUserId();
 
-            // Load progress for the list (or global if cross-list training)
             var listId = await trainingService.GetSessionListIdAsync(sessionId);
             var progress = listId.HasValue
                 ? await progressService.GetListProgressAsync(userId, listId.Value)
@@ -105,7 +96,8 @@ public static class TrainingEndpoints
             return Results.Redirect($"/training/{sessionId}?mode={mode}");
         }).RequireAuthorization().DisableAntiforgery();
 
-        app.MapPost("/training/{sessionId:int}/submit", async (int sessionId, HttpContext ctx, TrainingService trainingService, AiService aiService, AppDbContext db) =>
+        app.MapPost("/training/{sessionId:int}/submit", async (int sessionId, HttpContext ctx,
+            TrainingService trainingService, AiService aiService, AppDbContext db) =>
         {
             var form = await ctx.Request.ReadFormAsync();
             var action = form["Action"].FirstOrDefault();
@@ -121,96 +113,125 @@ public static class TrainingEndpoints
             var vocabIdStr = form["VocabularyId"].FirstOrDefault();
             var directionStr = form["QuestionDirection"].FirstOrDefault();
             var responseSecondsStr = form["ResponseSeconds"].FirstOrDefault();
-            double? responseSeconds = double.TryParse(responseSecondsStr, System.Globalization.CultureInfo.InvariantCulture, out var rs) ? rs : null;
+            double? responseSeconds = double.TryParse(responseSecondsStr,
+                System.Globalization.CultureInfo.InvariantCulture, out var rs) ? rs : null;
 
-            if (int.TryParse(vocabIdStr, out var vocabId) && int.TryParse(directionStr, out var dirInt))
+            if (!int.TryParse(vocabIdStr, out var vocabId) || !int.TryParse(directionStr, out var dirInt))
             {
-                var direction = (Direction)dirInt;
-                var feedback = await trainingService.SubmitAnswerAsync(sessionId, vocabId, direction, answer, responseSeconds);
+                return Results.Redirect($"/training/{sessionId}?mode={mode}");
+            }
 
-                // Generate hint for wrong answers if not already present
-                if (!feedback.IsCorrect && aiService.IsConfigured)
+            var direction = (Direction)dirInt;
+            var previousPrompt = form["PreviousPrompt"].FirstOrDefault() ?? "";
+            var submitFeedback = await trainingService.SubmitAnswerAsync(sessionId, vocabId, direction, answer, responseSeconds);
+
+            // Generate hint for wrong answers
+            string? hint = null;
+            if (!submitFeedback.IsCorrect && aiService.IsConfigured)
+            {
+                var vocab = await db.Vocabularies
+                    .Include(v => v.List).ThenInclude(l => l.SourceLanguage)
+                    .Include(v => v.List).ThenInclude(l => l.TargetLanguage)
+                    .FirstOrDefaultAsync(v => v.Id == vocabId);
+                if (vocab is not null)
                 {
-                    var vocab = await db.Vocabularies
-                        .Include(v => v.List).ThenInclude(l => l.SourceLanguage)
-                        .Include(v => v.List).ThenInclude(l => l.TargetLanguage)
-                        .FirstOrDefaultAsync(v => v.Id == vocabId);
-                    if (vocab is not null && vocab.Hint is null)
+                    if (vocab.Hint is null)
                     {
                         var translations = JsonSerializer.Deserialize<List<string>>(vocab.Translations)!;
-                        var hint = await aiService.GenerateHintAsync(
+                        vocab.Hint = await aiService.GenerateHintAsync(
                             vocab.Term, translations,
                             vocab.List.SourceLanguage.DisplayName,
                             vocab.List.TargetLanguage.DisplayName);
-                        if (hint is not null)
-                        {
-                            vocab.Hint = hint;
-                            await db.SaveChangesAsync();
-                        }
+                        await db.SaveChangesAsync();
                     }
+                    hint = vocab.Hint;
                 }
-
-                if (feedback.SessionComplete)
-                {
-                    return Results.Redirect($"/training/result/{sessionId}");
-                }
-
-                var correct = feedback.IsCorrect ? "1" : "0";
-                var correctAnswers = Uri.EscapeDataString(string.Join(", ", feedback.CorrectAnswers));
-                var prompt = Uri.EscapeDataString(form["PreviousPrompt"].FirstOrDefault() ?? "");
-                var givenAnswer = Uri.EscapeDataString(answer);
-
-                // Include hint in redirect if available
-                var hintParam = "";
-                if (!feedback.IsCorrect)
-                {
-                    var vocabForHint = await db.Vocabularies.FindAsync(vocabId);
-                    if (vocabForHint?.Hint is not null)
-                    {
-                        hintParam = $"&fh={Uri.EscapeDataString(vocabForHint.Hint)}";
-                    }
-                }
-
-                var vocabParam = !feedback.IsCorrect ? $"&fv={vocabId}" : "";
-                return Results.Redirect(
-                    $"/training/{sessionId}?mode={mode}&fc={correct}&fa={correctAnswers}&fp={prompt}&fg={givenAnswer}{hintParam}{vocabParam}");
             }
 
-            return Results.Redirect($"/training/{sessionId}?mode={mode}");
+            if (submitFeedback.SessionComplete)
+            {
+                return Results.Redirect($"/training/result/{sessionId}");
+            }
+
+            // Load next question and render directly
+            var question = await trainingService.GetNextQuestionAsync(sessionId);
+            if (question is null)
+            {
+                await trainingService.CompleteSessionIfNeededAsync(sessionId);
+                return Results.Redirect($"/training/result/{sessionId}");
+            }
+
+            var isEndlos = string.Equals(mode, "Endlos", StringComparison.OrdinalIgnoreCase);
+            var feedback = new AnswerFeedback(
+                submitFeedback.IsCorrect, previousPrompt,
+                string.Join(", ", submitFeedback.CorrectAnswers),
+                answer, hint, vocabId);
+
+            return new RazorComponentResult<Training>(new
+            {
+                SessionId = sessionId,
+                Question = question,
+                Feedback = (AnswerFeedback?)feedback,
+                Mode = mode,
+                IsEndlos = isEndlos,
+                IsAdmin = ctx.User.IsInRole("Admin")
+            });
         }).RequireAuthorization().DisableAntiforgery();
 
-        app.MapPost("/training/{sessionId:int}/regenerate-hint/{vocabId:int}", async (int sessionId, int vocabId, HttpContext ctx, AiService aiService, AppDbContext db) =>
+        app.MapPost("/training/{sessionId:int}/regenerate-hint/{vocabId:int}", async (
+            int sessionId, int vocabId, HttpContext ctx,
+            TrainingService trainingService, AiService aiService, AppDbContext db) =>
         {
             var form = await ctx.Request.ReadFormAsync();
             var mode = form["Mode"].FirstOrDefault() ?? "";
-            var fa = form["fa"].FirstOrDefault() ?? "";
-            var fp = form["fp"].FirstOrDefault() ?? "";
-            var fg = form["fg"].FirstOrDefault() ?? "";
 
             var vocab = await db.Vocabularies
                 .Include(v => v.List).ThenInclude(l => l.SourceLanguage)
                 .Include(v => v.List).ThenInclude(l => l.TargetLanguage)
                 .FirstOrDefaultAsync(v => v.Id == vocabId);
 
+            string? hint = null;
             if (vocab is not null)
             {
                 var translations = JsonSerializer.Deserialize<List<string>>(vocab.Translations)!;
-                var hint = await aiService.GenerateHintAsync(
+                vocab.Hint = await aiService.GenerateHintAsync(
                     vocab.Term, translations,
                     vocab.List.SourceLanguage.DisplayName,
                     vocab.List.TargetLanguage.DisplayName);
-                if (hint is not null)
-                {
-                    vocab.Hint = hint;
-                    await db.SaveChangesAsync();
-                }
+                await db.SaveChangesAsync();
+                hint = vocab.Hint;
             }
 
-            var hintParam = vocab?.Hint is not null ? $"&fh={Uri.EscapeDataString(vocab.Hint)}" : "";
-            return Results.Redirect(
-                $"/training/{sessionId}?mode={mode}&fc=0&fa={Uri.EscapeDataString(fa)}&fp={Uri.EscapeDataString(fp)}&fg={Uri.EscapeDataString(fg)}{hintParam}&fv={vocabId}");
+            // Re-render the current training page with updated hint
+            var question = await trainingService.GetNextQuestionAsync(sessionId);
+            if (question is null)
+            {
+                return Results.Redirect($"/training/result/{sessionId}");
+            }
+
+            var isEndlos = string.Equals(mode, "Endlos", StringComparison.OrdinalIgnoreCase);
+
+            // Reconstruct feedback from form hidden fields
+            var feedback = new AnswerFeedback(
+                false,
+                form["FeedbackPrompt"].FirstOrDefault() ?? "",
+                form["FeedbackAnswers"].FirstOrDefault() ?? "",
+                form["FeedbackGiven"].FirstOrDefault() ?? "",
+                hint, vocabId);
+
+            return new RazorComponentResult<Training>(new
+            {
+                SessionId = sessionId,
+                Question = question,
+                Feedback = (AnswerFeedback?)feedback,
+                Mode = mode,
+                IsEndlos = isEndlos,
+                IsAdmin = ctx.User.IsInRole("Admin")
+            });
         }).RequireAuthorization().DisableAntiforgery();
 
         return app;
     }
 }
+
+public record AnswerFeedback(bool IsCorrect, string Prompt, string CorrectAnswers, string GivenAnswer, string? Hint, int VocabId);
