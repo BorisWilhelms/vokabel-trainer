@@ -179,3 +179,4 @@ Configured in `appsettings.json` (use env vars for secrets):
 - Pass `IsAdmin = ctx.User.IsInRole("Admin")` to every full page component
 - HTMX partials swap into `#content` div in PageLayout
 - Use `HX-Redirect` header for navigation from HTMX POST endpoints
+- **Keep the help page (`Components/Pages/Help.razor`) up to date** when adding or changing features. It is the user-facing documentation and must reflect the current behavior, algorithms, and data handling.
