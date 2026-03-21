@@ -18,9 +18,10 @@ Web-basierter Vokabeltrainer fuer eine Gymnasialschuelerin (9. Klasse), Schwerpu
 
 ## Authentifizierung
 
-- Keine vollstaendige Benutzerverwaltung. Whitelist mit Benutzernamen in Config/DB.
+- Keine vollstaendige Benutzerverwaltung. Whitelist DB-basiert, initialer Seed ueber appsettings.json.
 - Cookie-basierte Authentifizierung. Kein ASP.NET Identity — eigener Auth-Handler gegen die Whitelist.
 - Beim ersten Login mit bekanntem Benutzernamen wird ein Passwort gesetzt. Danach Login mit Benutzername + Passwort.
+- **Passwort-Reset:** Kein Self-Service. Admin loescht PasswordHash in der DB, User wird erneut zur Passwortvergabe aufgefordert.
 
 ## Datenmodell
 
@@ -52,7 +53,9 @@ Listen sind privat pro Benutzer.
 | Term | string | z.B. "res" |
 | Translations | string (JSON) | z.B. `["Sache", "Ding", "Angelegenheit"]` |
 
-Translations als JSON-Array gespeichert. Bei der Eingabe werden verschiedene Trennzeichen akzeptiert (Komma, Semikolon, Pipe) und ins Array geparst.
+Translations als JSON-Array gespeichert. Bei der Eingabe werden verschiedene Trennzeichen akzeptiert (Komma, Semikolon, Pipe) und ins Array geparst. Der Separator zwischen Term und Translations ist ausschliesslich `=`.
+
+**Loeschen:** Wird eine Vokabel aus einer Liste entfernt, werden zugehoerige BoxEntry- und TrainingAnswer-Eintraege kaskadierend geloescht.
 
 ### BoxEntry (Leitner-Stand)
 | Feld | Typ | Beschreibung |
@@ -72,7 +75,7 @@ Unique Constraint auf (UserId, VocabularyId). Wird beim ersten Training einer Li
 - Box 4: jede 8. Session (Intervall 8)
 - Box 5: jede 16. Session (Intervall 16)
 
-Nach jeder abgeschlossenen Session wird SessionsUntilReview fuer alle Vokabeln der Liste um 1 reduziert. Vokabeln mit SessionsUntilReview <= 0 sind faellig.
+Nach jeder abgeschlossenen Session wird SessionsUntilReview fuer **alle** Vokabeln der Liste um 1 reduziert — auch fuer Vokabeln die in dieser Session nicht abgefragt wurden (z.B. bei begrenzter Vokabelanzahl). Die Session zaehlt als "eine Runde" fuer die gesamte Liste. Vokabeln mit SessionsUntilReview <= 0 sind faellig.
 
 ### TrainingSession
 | Feld | Typ | Beschreibung |
@@ -83,8 +86,8 @@ Nach jeder abgeschlossenen Session wird SessionsUntilReview fuer alle Vokabeln d
 | Mode | enum | SinglePass / Endlos |
 | StartedAt | datetime | |
 | CompletedAt | datetime? | |
-| TotalQuestions | int | |
-| CorrectAnswers | int | |
+| TotalQuestions | int | Denormalisiert fuer schnellen Zugriff |
+| CorrectAnswers | int | Denormalisiert fuer schnellen Zugriff |
 
 ### TrainingAnswer
 | Feld | Typ | Beschreibung |
@@ -110,7 +113,7 @@ Nach jeder abgeschlossenen Session wird SessionsUntilReview fuer alle Vokabeln d
 1. System waehlt naechste Vokabel aus dem Pool (Leitner-Prioritaet: niedrige Boxen zuerst)
 2. Zufaellige Richtung: SourceToTarget oder TargetToSource
 3. Benutzer tippt Antwort ein
-4. Abgleich: case-insensitive, Whitespace getrimmt. Bei TargetToSource muss eine der Translations matchen, bei SourceToTarget der Term.
+4. Abgleich: case-insensitive, Whitespace getrimmt, strikter Vergleich (keine Akzent-Normalisierung, keine Tippfehler-Toleranz — spaeter erweiterbar). Bei TargetToSource muss eine der Translations matchen, bei SourceToTarget der Term.
 5. Sofortiges Feedback: richtig/falsch, bei falsch die korrekte(n) Antwort(en) anzeigen
 6. Leitner-Update: richtig = Box + 1 (max 5), falsch = zurueck auf Box 1
 7. Im Endlos-Modus: falsche Vokabeln gehen zurueck in den Pool, aber nicht sofort — ein paar andere Vokabeln kommen dazwischen
@@ -152,3 +155,4 @@ Nach jeder abgeschlossenen Session wird SessionsUntilReview fuer alle Vokabeln d
 - **Charts:** Leichtgewichtige JS-Chart-Library (z.B. Chart.js via JS-Interop)
 - **Sprach-Flaggen:** SVG-Icons pro Sprache, im Client hinterlegt
 - **Deployment:** Einzelne ASP.NET Core Anwendung die alles hostet
+- **Offline:** Explizit out of scope. PWA dient nur der Installierbarkeit, nicht der Offline-Nutzung.
