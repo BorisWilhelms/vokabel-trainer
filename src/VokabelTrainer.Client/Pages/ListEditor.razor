@@ -1,0 +1,131 @@
+@page "/lists/new"
+@page "/lists/{Id:int}/edit"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-4">
+    <MudText Typo="Typo.h5" Class="mb-4">@(Id.HasValue ? "Liste bearbeiten" : "Neue Liste")</MudText>
+
+    @if (_loading)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
+        <MudStack Spacing="3">
+            <MudTextField @bind-Value="_name"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Required="true" />
+
+            <MudSelect T="int"
+                       @bind-Value="_sourceLanguageId"
+                       Label="Quellsprache"
+                       Variant="Variant.Outlined"
+                       Required="true">
+                @foreach (var lang in _languages)
+                {
+                    <MudSelectItem T="int" Value="@lang.Id">@lang.DisplayName</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="int"
+                       @bind-Value="_targetLanguageId"
+                       Label="Zielsprache"
+                       Variant="Variant.Outlined"
+                       Required="true">
+                @foreach (var lang in _languages)
+                {
+                    <MudSelectItem T="int" Value="@lang.Id">@lang.DisplayName</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField @bind-Value="_rawVocabulary"
+                          Label="Vokabeln"
+                          Variant="Variant.Outlined"
+                          Lines="10"
+                          Placeholder="Eine Vokabel pro Zeile: Begriff = Uebersetzung1, Uebersetzung2" />
+
+            <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd">
+                <MudButton Variant="Variant.Outlined"
+                           OnClick="@Cancel">
+                    Abbrechen
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="@Save"
+                           Disabled="@_saving">
+                    Speichern
+                </MudButton>
+            </MudStack>
+        </MudStack>
+    }
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    private List<LanguageDto> _languages = [];
+    private string _name = string.Empty;
+    private int _sourceLanguageId;
+    private int _targetLanguageId;
+    private string _rawVocabulary = string.Empty;
+    private bool _loading = true;
+    private bool _saving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _languages = await ApiClient.GetLanguagesAsync();
+
+        if (Id.HasValue)
+        {
+            var list = await ApiClient.GetListAsync(Id.Value);
+            if (list is not null)
+            {
+                _name = list.Name;
+                _sourceLanguageId = list.SourceLanguageId;
+                _targetLanguageId = list.TargetLanguageId;
+                _rawVocabulary = string.Join("\n", list.Entries.Select(e =>
+                    $"{e.Term} = {string.Join(", ", e.Translations)}"));
+            }
+        }
+
+        _loading = false;
+    }
+
+    private async Task Save()
+    {
+        _saving = true;
+        try
+        {
+            if (Id.HasValue)
+            {
+                await ApiClient.UpdateListAsync(Id.Value, new UpdateVocabularyListRequest(_name, _sourceLanguageId, _targetLanguageId, _rawVocabulary));
+            }
+            else
+            {
+                await ApiClient.CreateListAsync(new CreateVocabularyListRequest(_name, _sourceLanguageId, _targetLanguageId, _rawVocabulary));
+            }
+
+            Snackbar.Add("Liste wurde gespeichert.", Severity.Success);
+            NavigationManager.NavigateTo("/");
+        }
+        catch
+        {
+            Snackbar.Add("Liste konnte nicht gespeichert werden.", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}
