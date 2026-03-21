@@ -83,16 +83,19 @@ public class AiService(IConfiguration config, IHttpClientFactory httpClientFacto
     {
         var translationsStr = string.Join(", ", translations);
         var prompt = $"""
-            Ein Schueler (14 Jahre, Gymnasium) lernt Vokabeln.
-            Erstelle eine kurze, einpraegsame Eselsbruecke/Merkhilfe fuer:
-
+            Finde eine Merkhilfe fuer diese Vokabel:
             {term} ({sourceLanguage}) = {translationsStr} ({targetLanguage})
 
-            Die Merkhilfe soll:
-            - Maximal 1-2 Saetze lang sein
-            - Kreativ und einpraegsam sein (Wortaehnlichkeiten, Bilder, Assoziationen)
-            - Auf Deutsch formuliert sein
-            - Keine Erklaerung drumherum, nur die Merkhilfe selbst
+            Regeln:
+            - Suche zuerst nach ECHTEN Verbindungen: verwandte Woerter im Deutschen oder Englischen, gemeinsame Wortwurzeln, Fremdwoerter die davon abstammen
+            - Beispiel: "bellum = Krieg" → "Rebellion kommt von bellum"
+            - Beispiel: "deus = Gott" → "Deity (engl.) kommt von deus"
+            - Beispiel: "aqua = Wasser" → "Aquarium"
+            - Wenn keine echte Verbindung existiert, nutze eine klangliche Aehnlichkeit zu einem deutschen Wort
+            - Maximal 1 kurzer Satz
+            - NUR die Merkhilfe ausgeben, nichts anderes
+            - Keine kuenstlichen Hervorhebungen mit Sternchen oder Grossbuchstaben
+            - KEINE erfundenen Woerter
             """;
 
         var messages = new[]
