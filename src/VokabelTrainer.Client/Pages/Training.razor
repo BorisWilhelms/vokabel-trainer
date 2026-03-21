@@ -5,16 +5,33 @@
 @inject NavigationManager NavigationManager
 
 <MudContainer MaxWidth="MaxWidth.Small" Class="mt-4">
-    @if (_state == State.Loading)
+    @if (_loading)
     {
         <MudProgressCircular Indeterminate="true" />
     }
-    else if (_state == State.Asking && _question is not null)
+    else if (_question is not null)
     {
-        <MudProgressLinear Value="@Progress" Max="100" Color="Color.Primary" Class="mb-4" />
+        @if (_lastFeedback is not null)
+        {
+            @if (_lastFeedback.IsCorrect)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true">
+                    Richtig! <strong>@_lastTerm</strong>
+                </MudAlert>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-3" Dense="true">
+                    <strong>@_lastTerm</strong> — Richtig: @string.Join(", ", _lastFeedback.CorrectAnswers)
+                    <MudText Typo="Typo.caption">Box @_lastFeedback.NewBox (falsch → Box wird zurueckgesetzt)</MudText>
+                </MudAlert>
+            }
+        }
+
+        <MudProgressLinear Value="@Progress" Max="100" Color="Color.Primary" Class="mb-2" />
         <MudText Typo="Typo.body2" Class="mb-2">Frage @_question.CurrentIndex von @_question.TotalCount</MudText>
 
-        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="mb-3">
             <LanguageFlag FlagSvg="@_question.SourceFlagSvg" />
             <MudText Typo="Typo.body1">@_question.SourceLanguageName</MudText>
             <MudText Typo="Typo.body1">→</MudText>
@@ -31,6 +48,7 @@
                       Variant="Variant.Outlined"
                       AutoFocus="true"
                       OnKeyDown="OnKeyDown"
+                      Disabled="_submitting"
                       Class="mb-4" />
 
         <MudStack Row="true" Spacing="2">
@@ -50,50 +68,16 @@
             }
         </MudStack>
     }
-    else if (_state == State.ShowingFeedback && _feedback is not null)
-    {
-        <MudProgressLinear Value="@Progress" Max="100" Color="Color.Primary" Class="mb-4" />
-
-        @if (_feedback.IsCorrect)
-        {
-            <MudAlert Severity="Severity.Success" Class="mb-4">Richtig!</MudAlert>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Error" Class="mb-4">
-                Falsch! Richtig: @string.Join(", ", _feedback.CorrectAnswers)
-            </MudAlert>
-        }
-
-        <MudText Typo="Typo.body2" Class="mb-4">Box: @_feedback.NewBox</MudText>
-
-        <MudStack Row="true" Spacing="2">
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       OnClick="LoadNextQuestion">
-                Weiter
-            </MudButton>
-            @if (_isEndlos)
-            {
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Warning"
-                           OnClick="AbortSession">
-                    Abbrechen
-                </MudButton>
-            }
-        </MudStack>
-    }
 </MudContainer>
 
 @code {
     [Parameter] public int SessionId { get; set; }
     [SupplyParameterFromQuery(Name = "mode")] public string? Mode { get; set; }
 
-    private enum State { Loading, Asking, ShowingFeedback }
-
-    private State _state = State.Loading;
+    private bool _loading = true;
     private TrainingQuestionDto? _question;
-    private SubmitAnswerResponse? _feedback;
+    private SubmitAnswerResponse? _lastFeedback;
+    private string? _lastTerm;
     private string _answer = string.Empty;
     private bool _submitting;
     private bool _isEndlos;
@@ -110,10 +94,6 @@
 
     private async Task LoadNextQuestion()
     {
-        _state = State.Loading;
-        _answer = string.Empty;
-        _feedback = null;
-
         var question = await ApiClient.GetNextQuestionAsync(SessionId);
         if (question is null)
         {
@@ -122,7 +102,8 @@
         }
 
         _question = question;
-        _state = State.Asking;
+        _answer = string.Empty;
+        _loading = false;
     }
 
     private async Task OnKeyDown(KeyboardEventArgs e)
@@ -141,15 +122,18 @@
         try
         {
             var request = new SubmitAnswerRequest(SessionId, _question.VocabularyId, _question.Direction, _answer);
-            _feedback = await ApiClient.SubmitAnswerAsync(request);
+            var feedback = await ApiClient.SubmitAnswerAsync(request);
 
-            if (_feedback?.SessionComplete == true)
+            if (feedback?.SessionComplete == true)
             {
                 NavigationManager.NavigateTo($"/training/result/{SessionId}");
                 return;
             }
 
-            _state = State.ShowingFeedback;
+            // Store feedback from this question, then immediately load next
+            _lastFeedback = feedback;
+            _lastTerm = _question.Prompt;
+            await LoadNextQuestion();
         }
         finally
         {
@@ -162,5 +146,4 @@
         await ApiClient.AbortSessionAsync(SessionId);
         NavigationManager.NavigateTo($"/training/result/{SessionId}");
     }
-
 }
