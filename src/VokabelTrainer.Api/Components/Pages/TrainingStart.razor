@@ -2,9 +2,7 @@
 @page "/training/start/{ListId:int}"
 @attribute [Authorize]
 @inject VocabularyListService ListService
-@inject TrainingService TrainingService
 @inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager Navigation
 
 <h1 class="title">Training starten</h1>
 
@@ -24,20 +22,23 @@
     </div>
 }
 
-<form method="post" @formname="training-start" @onsubmit="OnSubmit">
-    <AntiforgeryToken />
+<form method="post" action="/training/start">
+    @if (ListId.HasValue)
+    {
+        <input type="hidden" name="ListId" value="@ListId" />
+    }
 
     <div class="field">
         <label class="label">Modus</label>
         <div class="control">
             <label class="radio">
-                <input type="radio" name="SelectedMode" value="SinglePass" checked="@(SelectedMode != "Endlos")" />
+                <input type="radio" name="SelectedMode" value="SinglePass" checked />
                 Einfacher Durchlauf
             </label>
         </div>
         <div class="control">
             <label class="radio">
-                <input type="radio" name="SelectedMode" value="Endlos" checked="@(SelectedMode == "Endlos")" />
+                <input type="radio" name="SelectedMode" value="Endlos" />
                 Endlos (falsche Vokabeln wiederholen)
             </label>
         </div>
@@ -46,8 +47,7 @@
     <div class="field">
         <label class="label" for="max-vocab">Max. Vokabeln (optional)</label>
         <div class="control">
-            <input id="max-vocab" class="input" type="number" name="MaxVocabularyInput" style="max-width:200px"
-                   min="1" value="@MaxVocabularyInput" />
+            <input id="max-vocab" class="input" type="number" name="MaxVocabularyInput" style="max-width:200px" min="1" />
         </div>
     </div>
 
@@ -65,33 +65,16 @@
     [Parameter]
     public int? ListId { get; set; }
 
-    [SupplyParameterFromForm]
-    private string? SelectedMode { get; set; }
-
-    [SupplyParameterFromForm]
-    private int? MaxVocabularyInput { get; set; }
-
     private VocabularyListSummaryDto? listSummary;
 
     protected override async Task OnInitializedAsync()
     {
-        SelectedMode ??= "SinglePass";
-
-        var userId = GetUserId();
-
         if (ListId.HasValue)
         {
+            var userId = GetUserId();
             var allLists = await ListService.GetAllForUserAsync(userId);
             listSummary = allLists.FirstOrDefault(l => l.Id == ListId.Value);
         }
-    }
-
-    private async Task OnSubmit()
-    {
-        var userId = GetUserId();
-        var mode = SelectedMode == "Endlos" ? TrainingMode.Endlos : TrainingMode.SinglePass;
-        var sessionId = await TrainingService.StartSessionAsync(userId, ListId, mode, MaxVocabularyInput);
-        Navigation.NavigateTo($"/training/{sessionId}?mode={mode}", forceLoad: true);
     }
 
     private int GetUserId() =>

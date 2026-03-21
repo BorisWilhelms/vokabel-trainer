@@ -1,33 +1,29 @@
 @page "/login"
 @attribute [AllowAnonymous]
 @layout LoginLayout
-@using Microsoft.AspNetCore.Authentication
-@using Microsoft.AspNetCore.Authentication.Cookies
 @inject AuthService AuthService
-@inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager NavigationManager
 
 <h3 class="title has-text-centered">@(isSetup ? "Admin erstellen" : "Anmelden")</h3>
 
-@if (errorMessage is not null)
+@if (ErrorMessage is not null)
 {
     <div class="notification is-danger">
-        @errorMessage
+        @ErrorMessage
     </div>
 }
 
-<EditForm Model="Input!" method="post" OnValidSubmit="HandleSubmit" FormName="login">
+<form method="post" action="/login">
     <div class="field">
         <label class="label" for="username">Benutzername</label>
         <div class="control">
-            <InputText id="username" class="input" @bind-Value="Input!.Username" />
+            <input id="username" class="input" type="text" name="Username" />
         </div>
     </div>
 
     <div class="field">
         <label class="label" for="password">Passwort</label>
         <div class="control">
-            <InputText id="password" type="password" class="input" @bind-Value="Input!.Password" />
+            <input id="password" type="password" class="input" name="Password" />
         </div>
     </div>
 
@@ -36,7 +32,7 @@
         <div class="field">
             <label class="label" for="password-confirm">Passwort wiederholen</label>
             <div class="control">
-                <InputText id="password-confirm" type="password" class="input" @bind-Value="Input!.PasswordConfirmation" />
+                <input id="password-confirm" type="password" class="input" name="PasswordConfirmation" />
             </div>
         </div>
     }
@@ -46,66 +42,24 @@
             @(isSetup ? "Erstellen" : "Anmelden")
         </button>
     </div>
-</EditForm>
+</form>
 
 @code {
     private bool isSetup;
-    private string? errorMessage;
 
-    [SupplyParameterFromForm]
-    private LoginModel? Input { get; set; }
+    [SupplyParameterFromQuery(Name = "error")]
+    public string? Error { get; set; }
+
+    private string? ErrorMessage => Error switch
+    {
+        "credentials" => "Benutzername und Passwort sind erforderlich.",
+        "mismatch" => "Die Passwoerter stimmen nicht ueberein.",
+        "invalid" => "Benutzername oder Passwort ist falsch.",
+        _ => null
+    };
 
     protected override async Task OnInitializedAsync()
     {
-        Input ??= new();
         isSetup = await AuthService.NeedsInitialSetupAsync();
-    }
-
-    private async Task HandleSubmit()
-    {
-        errorMessage = null;
-        var input = Input!;
-
-        if (string.IsNullOrWhiteSpace(input.Username) || string.IsNullOrWhiteSpace(input.Password))
-        {
-            errorMessage = "Benutzername und Passwort sind erforderlich.";
-            return;
-        }
-
-        if (isSetup && input.Password != input.PasswordConfirmation)
-        {
-            errorMessage = "Die Passw\u00f6rter stimmen nicht \u00fcberein.";
-            return;
-        }
-
-        var result = await AuthService.LoginOrSetupAsync(input.Username, input.Password);
-        if (result is null)
-        {
-            errorMessage = "Benutzername oder Passwort ist falsch.";
-            return;
-        }
-
-        var claims = new List<Claim>
-        {
-            new(ClaimTypes.NameIdentifier, result.UserId.ToString()),
-            new(ClaimTypes.Name, result.Username),
-            new(ClaimTypes.Role, result.Role.ToString())
-        };
-
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
-
-        await HttpContextAccessor.HttpContext!.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            principal);
-
-        NavigationManager.NavigateTo("/", forceLoad: true);
-    }
-
-    private class LoginModel
-    {
-        public string Username { get; set; } = "";
-        public string Password { get; set; } = "";
-        public string PasswordConfirmation { get; set; } = "";
     }
 }

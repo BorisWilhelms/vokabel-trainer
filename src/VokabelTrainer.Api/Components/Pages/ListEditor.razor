@@ -8,11 +8,11 @@
 
 <h1 class="title">@(Id.HasValue ? "Liste bearbeiten" : "Neue Liste")</h1>
 
-<EditForm Model="Model!" method="post" OnValidSubmit="OnSubmit" FormName="list-editor">
+<form method="post" action="@(Id.HasValue ? $"/lists/{Id}" : "/lists")">
     <div class="field">
         <label class="label" for="name-input">Name</label>
         <div class="control">
-            <InputText id="name-input" class="input" @bind-Value="Model!.Name" />
+            <input id="name-input" class="input" type="text" name="Name" value="@name" />
         </div>
     </div>
 
@@ -20,16 +20,16 @@
         <label class="label">Ausgangssprache</label>
         <div class="control">
             <div class="select is-fullwidth">
-                <InputSelect @bind-Value="Model!.SourceLanguageId">
-                    <option value="0">-- Sprache wählen --</option>
+                <select name="SourceLanguageId">
+                    <option value="0">-- Sprache waehlen --</option>
                     @if (languages is not null)
                     {
                         @foreach (var lang in languages)
                         {
-                            <option value="@lang.Id">@lang.DisplayName</option>
+                            <option value="@lang.Id" selected="@(lang.Id == sourceLanguageId)">@lang.DisplayName</option>
                         }
                     }
-                </InputSelect>
+                </select>
             </div>
         </div>
     </div>
@@ -38,16 +38,16 @@
         <label class="label">Zielsprache</label>
         <div class="control">
             <div class="select is-fullwidth">
-                <InputSelect @bind-Value="Model!.TargetLanguageId">
-                    <option value="0">-- Sprache wählen --</option>
+                <select name="TargetLanguageId">
+                    <option value="0">-- Sprache waehlen --</option>
                     @if (languages is not null)
                     {
                         @foreach (var lang in languages)
                         {
-                            <option value="@lang.Id">@lang.DisplayName</option>
+                            <option value="@lang.Id" selected="@(lang.Id == targetLanguageId)">@lang.DisplayName</option>
                         }
                     }
-                </InputSelect>
+                </select>
             </div>
         </div>
     </div>
@@ -62,9 +62,8 @@
     <div class="field">
         <label class="label" for="vocabulary-textarea">Vokabeln</label>
         <div class="control">
-            <InputTextArea id="vocabulary-textarea" class="textarea" rows="10"
-                           placeholder="Eine Vokabel pro Zeile: Begriff = Uebersetzung1, Uebersetzung2"
-                           @bind-Value="Model!.RawVocabulary" />
+            <textarea id="vocabulary-textarea" class="textarea" rows="10" name="RawVocabulary"
+                      placeholder="Eine Vokabel pro Zeile: Begriff = Uebersetzung1, Uebersetzung2">@rawVocabulary</textarea>
         </div>
     </div>
 
@@ -76,7 +75,7 @@
             <a href="/" class="button is-light">Abbrechen</a>
         </div>
     </div>
-</EditForm>
+</form>
 
 <script>
 function handleCsvImport(input) {
@@ -146,17 +145,15 @@ function parseCsvLine(line) {
     [Parameter]
     public int? Id { get; set; }
 
-    [SupplyParameterFromForm]
-    private ListModel? Model { get; set; }
-
     private List<LanguageDto>? languages;
+    private string name = "";
+    private int sourceLanguageId;
+    private int targetLanguageId;
+    private string rawVocabulary = "";
 
     protected override async Task OnInitializedAsync()
     {
         languages = await LanguageService.GetAllAsync();
-
-        if (Model is not null)
-            return;
 
         if (Id.HasValue)
         {
@@ -168,49 +165,14 @@ function parseCsvLine(line) {
                 return;
             }
 
-            Model = new ListModel
-            {
-                Name = list.Name,
-                SourceLanguageId = list.SourceLanguageId,
-                TargetLanguageId = list.TargetLanguageId,
-                RawVocabulary = string.Join("\n",
-                    list.Entries.Select(e => $"{e.Term} = {string.Join(", ", e.Translations)}"))
-            };
+            name = list.Name;
+            sourceLanguageId = list.SourceLanguageId;
+            targetLanguageId = list.TargetLanguageId;
+            rawVocabulary = string.Join("\n",
+                list.Entries.Select(e => $"{e.Term} = {string.Join(", ", e.Translations)}"));
         }
-        else
-        {
-            Model = new();
-        }
-    }
-
-    private async Task OnSubmit()
-    {
-        var userId = GetUserId();
-
-        if (Id.HasValue)
-        {
-            var request = new UpdateVocabularyListRequest(
-                Model!.Name, Model.SourceLanguageId, Model.TargetLanguageId, Model.RawVocabulary);
-            await ListService.UpdateAsync(Id.Value, userId, request);
-        }
-        else
-        {
-            var request = new CreateVocabularyListRequest(
-                Model!.Name, Model.SourceLanguageId, Model.TargetLanguageId, Model.RawVocabulary);
-            await ListService.CreateAsync(userId, request);
-        }
-
-        Navigation.NavigateTo("/", forceLoad: true);
     }
 
     private int GetUserId() =>
         int.Parse(HttpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-
-    private class ListModel
-    {
-        public string Name { get; set; } = "";
-        public int SourceLanguageId { get; set; }
-        public int TargetLanguageId { get; set; }
-        public string RawVocabulary { get; set; } = "";
-    }
 }

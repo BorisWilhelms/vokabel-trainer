@@ -1,8 +1,6 @@
 @page "/admin/languages"
 @attribute [Authorize(Roles = "Admin")]
 @inject LanguageService LanguageService
-@inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager NavigationManager
 
 <h1 class="title">Sprachen</h1>
 
@@ -13,28 +11,23 @@
 
 <div class="box">
     <h2 class="subtitle">@(editLanguage is not null ? "Sprache bearbeiten" : "Neue Sprache anlegen")</h2>
-    <form method="post" @formname="save-language" @onsubmit="HandleSave">
-        <AntiforgeryToken />
-        @if (editLanguage is not null)
-        {
-            <input type="hidden" name="EditId" value="@editLanguage.Id" />
-        }
+    <form method="post" action="@(editLanguage is not null ? $"/admin/languages/{editLanguage.Id}" : "/admin/languages")">
         <div class="field">
             <label class="label">Code</label>
             <div class="control">
-                <input type="text" name="FormCode" class="input" placeholder="z.B. de, en, la" value="@(editLanguage?.Code ?? FormCode)" />
+                <input type="text" name="FormCode" class="input" placeholder="z.B. de, en, la" value="@(editLanguage?.Code)" />
             </div>
         </div>
         <div class="field">
             <label class="label">Name</label>
             <div class="control">
-                <input type="text" name="FormDisplayName" class="input" placeholder="z.B. Deutsch" value="@(editLanguage?.DisplayName ?? FormDisplayName)" />
+                <input type="text" name="FormDisplayName" class="input" placeholder="z.B. Deutsch" value="@(editLanguage?.DisplayName)" />
             </div>
         </div>
         <div class="field">
             <label class="label">Flagge (SVG)</label>
             <div class="control">
-                <textarea name="FormFlagSvg" class="textarea" rows="4" placeholder="SVG-Code der Flagge">@(editLanguage?.FlagSvg ?? FormFlagSvg)</textarea>
+                <textarea name="FormFlagSvg" class="textarea" rows="4" placeholder="SVG-Code der Flagge">@(editLanguage?.FlagSvg)</textarea>
             </div>
         </div>
         <div class="field is-grouped">
@@ -74,9 +67,7 @@
                     <td>
                         <div class="buttons are-small">
                             <a href="/admin/languages?edit=@lang.Id" class="button is-small is-info">Bearbeiten</a>
-                            <form method="post" @formname="@($"delete-{lang.Id}")" @onsubmit="HandleDelete">
-                                <AntiforgeryToken />
-                                <input type="hidden" name="DeleteId" value="@lang.Id" />
+                            <form method="post" action="/admin/languages/@lang.Id/delete">
                                 <button type="submit" class="button is-small is-danger" onclick="return confirm('Sprache wirklich loeschen?')">Loeschen</button>
                             </form>
                         </div>
@@ -93,22 +84,10 @@
     private string? errorMessage;
 
     [SupplyParameterFromQuery(Name = "edit")]
-    private int? EditQueryId { get; set; }
+    public int? EditQueryId { get; set; }
 
-    [SupplyParameterFromForm(FormName = "save-language")]
-    private string? FormCode { get; set; }
-
-    [SupplyParameterFromForm(FormName = "save-language")]
-    private string? FormDisplayName { get; set; }
-
-    [SupplyParameterFromForm(FormName = "save-language")]
-    private string? FormFlagSvg { get; set; }
-
-    [SupplyParameterFromForm(FormName = "save-language")]
-    private int? EditId { get; set; }
-
-    [SupplyParameterFromForm]
-    private int? DeleteId { get; set; }
+    [SupplyParameterFromQuery(Name = "error")]
+    public string? ErrorQuery { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -118,40 +97,12 @@
         {
             editLanguage = languages.FirstOrDefault(l => l.Id == EditQueryId.Value);
         }
-    }
 
-    private async Task HandleSave()
-    {
-        if (string.IsNullOrWhiteSpace(FormCode) || string.IsNullOrWhiteSpace(FormDisplayName))
+        errorMessage = ErrorQuery switch
         {
-            errorMessage = "Code und Name sind erforderlich.";
-            return;
-        }
-
-        if (EditId.HasValue)
-        {
-            await LanguageService.UpdateAsync(EditId.Value, new UpdateLanguageRequest(FormCode, FormDisplayName, FormFlagSvg));
-        }
-        else
-        {
-            await LanguageService.CreateAsync(new CreateLanguageRequest(FormCode, FormDisplayName, FormFlagSvg));
-        }
-
-        NavigationManager.NavigateTo("/admin/languages", forceLoad: true);
-    }
-
-    private async Task HandleDelete()
-    {
-        if (DeleteId is null) return;
-
-        var success = await LanguageService.DeleteAsync(DeleteId.Value);
-        if (!success)
-        {
-            errorMessage = "Sprache kann nicht geloescht werden, da sie noch verwendet wird.";
-            languages = await LanguageService.GetAllAsync();
-            return;
-        }
-
-        NavigationManager.NavigateTo("/admin/languages", forceLoad: true);
+            "required" => "Code und Name sind erforderlich.",
+            "in-use" => "Sprache kann nicht geloescht werden, da sie noch verwendet wird.",
+            _ => null
+        };
     }
 }

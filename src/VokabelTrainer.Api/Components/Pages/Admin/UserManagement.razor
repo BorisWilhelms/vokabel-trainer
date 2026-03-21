@@ -1,18 +1,15 @@
 @page "/admin/users"
 @attribute [Authorize(Roles = "Admin")]
 @inject UserService UserService
-@inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager NavigationManager
 
 <h1 class="title">Benutzerverwaltung</h1>
 
 <div class="box">
     <h2 class="subtitle">Neuen Benutzer anlegen</h2>
-    <form method="post" @formname="create-user" @onsubmit="HandleCreate">
-        <AntiforgeryToken />
+    <form method="post" action="/admin/users">
         <div class="field has-addons">
             <div class="control is-expanded">
-                <input type="text" name="NewUsername" class="input" placeholder="Benutzername" value="@NewUsername" />
+                <input type="text" name="NewUsername" class="input" placeholder="Benutzername" />
             </div>
             <div class="control">
                 <button type="submit" class="button is-primary">Benutzer anlegen</button>
@@ -50,16 +47,10 @@
                     </td>
                     <td>
                         <div class="buttons are-small">
-                            <form method="post" @formname="@($"reset-{user.Id}")" @onsubmit="HandleAction">
-                                <AntiforgeryToken />
-                                <input type="hidden" name="ActionUserId" value="@user.Id" />
-                                <input type="hidden" name="Action" value="reset" />
+                            <form method="post" action="/admin/users/@user.Id/reset">
                                 <button type="submit" class="button is-small is-warning">Passwort zuruecksetzen</button>
                             </form>
-                            <form method="post" @formname="@($"delete-{user.Id}")" @onsubmit="HandleAction">
-                                <AntiforgeryToken />
-                                <input type="hidden" name="ActionUserId" value="@user.Id" />
-                                <input type="hidden" name="Action" value="delete" />
+                            <form method="post" action="/admin/users/@user.Id/delete">
                                 <button type="submit" class="button is-small is-danger" onclick="return confirm('Benutzer wirklich loeschen?')">Loeschen</button>
                             </form>
                         </div>
@@ -73,42 +64,8 @@
 @code {
     private List<UserDto>? users;
 
-    [SupplyParameterFromForm(FormName = "create-user")]
-    private string? NewUsername { get; set; }
-
-    [SupplyParameterFromForm]
-    private string? Action { get; set; }
-
-    [SupplyParameterFromForm]
-    private int? ActionUserId { get; set; }
-
     protected override async Task OnInitializedAsync()
     {
         users = await UserService.GetAllAsync();
-    }
-
-    private async Task HandleCreate()
-    {
-        if (!string.IsNullOrWhiteSpace(NewUsername))
-        {
-            await UserService.CreateAsync(new CreateUserRequest(NewUsername));
-        }
-        NavigationManager.NavigateTo("/admin/users", forceLoad: true);
-    }
-
-    private async Task HandleAction()
-    {
-        if (ActionUserId is null || Action is null) return;
-
-        switch (Action)
-        {
-            case "reset":
-                await UserService.ResetPasswordAsync(ActionUserId.Value);
-                break;
-            case "delete":
-                await UserService.DeleteAsync(ActionUserId.Value);
-                break;
-        }
-        NavigationManager.NavigateTo("/admin/users", forceLoad: true);
     }
 }
