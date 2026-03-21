@@ -38,7 +38,7 @@ public static class TrainingEndpoints
         }).RequireAuthorization();
 
         app.MapGet("/training/{sessionId:int}", async (int sessionId, TrainingService trainingService, HttpContext ctx,
-            string? mode, string? fc, string? fa, string? fp, string? fg, string? fh) =>
+            string? mode, string? fc, string? fa, string? fp, string? fg, string? fh, int? fv) =>
         {
             var question = await trainingService.GetNextQuestionAsync(sessionId);
             if (question is null)
@@ -59,6 +59,7 @@ public static class TrainingEndpoints
                 FeedbackPrompt = fp,
                 FeedbackGiven = fg,
                 FeedbackHint = fh,
+                FeedbackVocabId = fv,
                 Mode = mode,
                 IsEndlos = isEndlos,
                 IsAdmin = ctx.User.IsInRole("Admin")
@@ -170,11 +171,44 @@ public static class TrainingEndpoints
                     }
                 }
 
+                var vocabParam = !feedback.IsCorrect ? $"&fv={vocabId}" : "";
                 return Results.Redirect(
-                    $"/training/{sessionId}?mode={mode}&fc={correct}&fa={correctAnswers}&fp={prompt}&fg={givenAnswer}{hintParam}");
+                    $"/training/{sessionId}?mode={mode}&fc={correct}&fa={correctAnswers}&fp={prompt}&fg={givenAnswer}{hintParam}{vocabParam}");
             }
 
             return Results.Redirect($"/training/{sessionId}?mode={mode}");
+        }).RequireAuthorization().DisableAntiforgery();
+
+        app.MapPost("/training/{sessionId:int}/regenerate-hint/{vocabId:int}", async (int sessionId, int vocabId, HttpContext ctx, AiService aiService, AppDbContext db) =>
+        {
+            var form = await ctx.Request.ReadFormAsync();
+            var mode = form["Mode"].FirstOrDefault() ?? "";
+            var fa = form["fa"].FirstOrDefault() ?? "";
+            var fp = form["fp"].FirstOrDefault() ?? "";
+            var fg = form["fg"].FirstOrDefault() ?? "";
+
+            var vocab = await db.Vocabularies
+                .Include(v => v.List).ThenInclude(l => l.SourceLanguage)
+                .Include(v => v.List).ThenInclude(l => l.TargetLanguage)
+                .FirstOrDefaultAsync(v => v.Id == vocabId);
+
+            if (vocab is not null)
+            {
+                var translations = JsonSerializer.Deserialize<List<string>>(vocab.Translations)!;
+                var hint = await aiService.GenerateHintAsync(
+                    vocab.Term, translations,
+                    vocab.List.SourceLanguage.DisplayName,
+                    vocab.List.TargetLanguage.DisplayName);
+                if (hint is not null)
+                {
+                    vocab.Hint = hint;
+                    await db.SaveChangesAsync();
+                }
+            }
+
+            var hintParam = vocab?.Hint is not null ? $"&fh={Uri.EscapeDataString(vocab.Hint)}" : "";
+            return Results.Redirect(
+                $"/training/{sessionId}?mode={mode}&fc=0&fa={Uri.EscapeDataString(fa)}&fp={Uri.EscapeDataString(fp)}&fg={Uri.EscapeDataString(fg)}{hintParam}&fv={vocabId}");
         }).RequireAuthorization().DisableAntiforgery();
 
         return app;

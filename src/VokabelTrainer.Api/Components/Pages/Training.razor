@@ -12,7 +12,21 @@
                 <p class="is-size-7">Deine Antwort: @FeedbackGiven</p>
                 @if (FeedbackHint is not null)
                 {
-                    <p class="is-size-7 mt-1">💡 @FeedbackHint</p>
+                    <p class="is-size-7 mt-1">
+                        💡 @FeedbackHint
+                        @if (FeedbackVocabId.HasValue)
+                        {
+                            <form method="post" action="/training/@SessionId/regenerate-hint/@FeedbackVocabId" style="display:inline">
+                                <input type="hidden" name="Mode" value="@Mode" />
+                                <input type="hidden" name="fa" value="@FeedbackAnswers" />
+                                <input type="hidden" name="fp" value="@FeedbackPrompt" />
+                                <input type="hidden" name="fg" value="@FeedbackGiven" />
+                                <button type="submit" class="button is-ghost is-small p-0 ml-2" style="height:auto;text-decoration:underline;">
+                                    neuer Hinweis
+                                </button>
+                            </form>
+                        }
+                    </p>
                 }
             }
         </div>
@@ -87,6 +101,7 @@
     [Parameter] public string? FeedbackPrompt { get; set; }
     [Parameter] public string? FeedbackGiven { get; set; }
     [Parameter] public string? FeedbackHint { get; set; }
+    [Parameter] public int? FeedbackVocabId { get; set; }
     [Parameter] public string? Mode { get; set; }
     [Parameter] public bool IsEndlos { get; set; }
     [Parameter] public bool IsAdmin { get; set; }
