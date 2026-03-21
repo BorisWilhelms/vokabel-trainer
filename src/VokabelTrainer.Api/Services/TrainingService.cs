@@ -75,8 +75,13 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
         var dueEntries = await query
             .Where(b => !correctlyAnsweredIds.Contains(b.VocabularyId))
             .OrderBy(b => b.Box)
-            .ThenBy(b => Guid.NewGuid()) // random within same box
             .ToListAsync();
+
+        // Shuffle within same box level (client-side, can't do Random in SQL)
+        dueEntries = dueEntries
+            .GroupBy(b => b.Box)
+            .SelectMany(g => g.OrderBy(_ => Rng.Next()))
+            .ToList();
 
         // In Endlos mode, also avoid recently wrong-answered vocab (delay re-asking)
         if (session.Mode == TrainingMode.Endlos && dueEntries.Count > 1)
