@@ -108,7 +108,7 @@
         _loading = false;
         StateHasChanged();
         await Task.Delay(50);
-        await JS.InvokeVoidAsync("eval", "document.querySelector('#answer-input input')?.focus()");
+        await JS.InvokeVoidAsync("eval", "document.getElementById('answer-input')?.focus()");
     }
 
     private async Task OnKeyDown(KeyboardEventArgs e)
