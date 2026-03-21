@@ -8,10 +8,10 @@
     <h1 class="title">Ergebnis</h1>
 
     <div class="has-text-centered mb-5">
-        <p class="is-size-1 has-text-weight-bold has-text-@GetColorClass()">
-            @result.SuccessRate %
+        <p class="score-display has-text-@GetColorClass()">
+            @result.SuccessRate%
         </p>
-        <p class="is-size-4">@result.CorrectAnswers von @result.TotalQuestions richtig</p>
+        <p class="is-size-4 mt-2">@result.CorrectAnswers von @result.TotalQuestions richtig</p>
     </div>
 
     @if (result.WrongAnswers.Count > 0)
