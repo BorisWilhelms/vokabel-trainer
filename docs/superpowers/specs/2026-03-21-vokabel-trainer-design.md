@@ -90,7 +90,7 @@ Nach jeder abgeschlossenen Session wird SessionsUntilReview fuer **alle** Vokabe
 |------|-----|-------------|
 | Id | int (PK) | |
 | UserId | int (FK) | |
-| ListId | int (FK) | |
+| ListId | int? (FK) | Null bei listenuebergreifendem Training |
 | Mode | enum | SinglePass / Endlos |
 | StartedAt | datetime | |
 | CompletedAt | datetime? | |
@@ -111,11 +111,13 @@ Nach jeder abgeschlossenen Session wird SessionsUntilReview fuer **alle** Vokabe
 ## Trainings-Flow
 
 ### Session starten
-1. Benutzer waehlt eine Liste
+1. Benutzer waehlt eine Liste **oder "Alle Listen"** (listenuebergreifendes Training)
 2. Benutzer waehlt den Modus:
    - **Einmal durch** — jede faellige Vokabel wird einmal abgefragt
    - **Endlos** — falsch beantwortete Vokabeln kommen zurueck in den Pool, Session endet wenn alle mindestens einmal richtig beantwortet wurden
 3. Benutzer kann optional die Anzahl Vokabeln begrenzen (Default: alle faelligen)
+
+**Listenuebergreifendes Training:** Faellige Vokabeln aus allen Listen werden in einen Pool zusammengefasst. Leitner-Logik bleibt identisch. Nach Abschluss wird SessionsUntilReview fuer alle betroffenen Listen reduziert.
 
 ### Abfrage-Logik
 1. System waehlt naechste Vokabel aus dem Pool (Leitner-Prioritaet: niedrige Boxen zuerst)
@@ -148,7 +150,7 @@ Nach jeder abgeschlossenen Session wird SessionsUntilReview fuer **alle** Vokabe
 ## UI-Screens
 
 1. **Login** — Benutzername + Passwort. Erster Login setzt Passwort. Erster User ueberhaupt wird Admin.
-2. **Dashboard** — Listenuebersicht mit Leitner-Box-Balken, Flaggen pro Sprache. Buttons: Trainieren, Bearbeiten, Fortschritt. Button fuer neue Liste. Admin sieht zusaetzlich Link zur Admin-Oberflaeche.
+2. **Dashboard** — Listenuebersicht mit Leitner-Box-Balken, Flaggen pro Sprache. Buttons: Trainieren, Bearbeiten, Fortschritt. Button fuer neue Liste. Button "Alle trainieren" fuer listenuebergreifendes Training. Admin sieht zusaetzlich Link zur Admin-Oberflaeche.
 3. **Liste erstellen/bearbeiten** — Name, Sprachen (Dropdowns), Texteingabe: eine Vokabel pro Zeile im Format `Begriff = Uebersetzung1, Uebersetzung2`. Verschiedene Trennzeichen werden akzeptiert.
 4. **Training starten** — Moduswahl (Einmal/Endlos), optionale Vokabelanzahl.
 5. **Training** — Karte mit Richtungsanzeige (Flaggen), Eingabefeld, sofortiges Feedback, Box-Update-Anzeige, Fortschrittsanzeige (x/n).
