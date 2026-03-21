@@ -177,3 +177,4 @@ Nach jeder abgeschlossenen Session wird SessionsUntilReview fuer **alle** Vokabe
 - **Deployment:** Einzelne ASP.NET Core Anwendung die alles hostet
 - **Offline:** Explizit out of scope. PWA dient nur der Installierbarkeit, nicht der Offline-Nutzung.
 - **Lokalisierung:** Alle UI-Texte ueber `IStringLocalizer` / `.resx`-Dateien. Initiale Sprache: Deutsch. Weitere Sprachen spaeter durch Hinzufuegen von `.resx`-Dateien moeglich, ohne Code-Aenderungen.
+- **.NET 10**, Nullable Reference Types enabled, TreatWarningsAsErrors in allen Projekten.

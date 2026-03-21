@@ -6,7 +6,9 @@
 
 **Architecture:** ASP.NET Core Web API backend with EF Core + SQLite, Blazor WASM PWA frontend, shared DTO project. All business logic in API services, frontend is a pure API consumer.
 
-**Tech Stack:** .NET 9, ASP.NET Core, Blazor WASM, EF Core, SQLite, Chart.js (via JS interop), IStringLocalizer for localization.
+**Tech Stack:** .NET 10, ASP.NET Core, Blazor WASM, EF Core, SQLite, Chart.js (via JS interop), IStringLocalizer for localization.
+
+**Compiler Settings:** Alle Projekte: `<Nullable>enable</Nullable>`, `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` in den `.csproj`-Dateien.
 
 **Spec:** `docs/superpowers/specs/2026-03-21-vokabel-trainer-design.md`
 
@@ -149,10 +151,10 @@ tests/VokabelTrainer.Api.Tests/
 
 ```bash
 dotnet new sln -n VokabelTrainer
-dotnet new classlib -n VokabelTrainer.Shared -o src/VokabelTrainer.Shared -f net9.0
-dotnet new webapi -n VokabelTrainer.Api -o src/VokabelTrainer.Api -f net9.0
-dotnet new blazorwasm -n VokabelTrainer.Client -o src/VokabelTrainer.Client -f net9.0 --pwa
-dotnet new xunit -n VokabelTrainer.Api.Tests -o tests/VokabelTrainer.Api.Tests -f net9.0
+dotnet new classlib -n VokabelTrainer.Shared -o src/VokabelTrainer.Shared -f net10.0
+dotnet new webapi -n VokabelTrainer.Api -o src/VokabelTrainer.Api -f net10.0
+dotnet new blazorwasm -n VokabelTrainer.Client -o src/VokabelTrainer.Client -f net10.0 --pwa
+dotnet new xunit -n VokabelTrainer.Api.Tests -o tests/VokabelTrainer.Api.Tests -f net10.0
 ```
 
 - [ ] **Step 2: Add projects to solution and set up references**
@@ -195,7 +197,20 @@ dotnet add package Microsoft.EntityFrameworkCore.InMemory
 dotnet add package FluentAssertions
 ```
 
-- [ ] **Step 4: Add .gitignore**
+- [ ] **Step 4: Configure compiler settings**
+
+Add to all four `.csproj` files (Shared, Api, Client, Tests):
+
+```xml
+<PropertyGroup>
+  <Nullable>enable</Nullable>
+  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+</PropertyGroup>
+```
+
+Note: Blazor WASM und xunit Templates setzen `Nullable` evtl. schon. `TreatWarningsAsErrors` muss explizit hinzugefuegt werden. Sicherstellen dass der Build danach warning-frei ist.
+
+- [ ] **Step 5: Add .gitignore**
 
 ```bash
 dotnet new gitignore
