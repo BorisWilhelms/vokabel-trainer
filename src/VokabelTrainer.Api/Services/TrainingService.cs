@@ -281,6 +281,12 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
             Math.Round(successRate, 1), wrongAnswers);
     }
 
+    public async Task<int?> GetSessionListIdAsync(int sessionId)
+    {
+        var session = await db.TrainingSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+        return session?.ListId;
+    }
+
     public async Task CompleteSessionIfNeededAsync(int sessionId)
     {
         var session = await db.TrainingSessions.FirstOrDefaultAsync(s => s.Id == sessionId);

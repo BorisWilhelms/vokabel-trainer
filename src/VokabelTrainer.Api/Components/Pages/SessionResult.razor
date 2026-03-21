@@ -36,6 +36,22 @@
             </div>
         }
 
+        @if (Progress is not null)
+        {
+            <div class="box mt-5">
+                <h2 class="subtitle">Aktueller Fortschritt — @Progress.ListName</h2>
+                <BoxDistribution Distribution="@Progress.BoxDistribution" />
+                <div class="columns mt-3 has-text-centered">
+                    <div class="column"><span class="tag is-danger">Box 1: @Progress.BoxDistribution.Box1</span></div>
+                    <div class="column"><span class="tag is-warning">Box 2: @Progress.BoxDistribution.Box2</span></div>
+                    <div class="column"><span class="tag is-info">Box 3: @Progress.BoxDistribution.Box3</span></div>
+                    <div class="column"><span class="tag is-primary">Box 4: @Progress.BoxDistribution.Box4</span></div>
+                    <div class="column"><span class="tag is-success">Box 5: @Progress.BoxDistribution.Box5</span></div>
+                </div>
+                <p class="has-text-centered mt-2">@Progress.TotalSessions Sitzungen absolviert</p>
+            </div>
+        }
+
         <div class="field is-grouped mt-5">
             <div class="control">
                 <a href="/training/start" class="button is-primary">Nochmal trainieren</a>
@@ -54,6 +70,7 @@
 
 @code {
     [Parameter] public SessionResultDto? Result { get; set; }
+    [Parameter] public ListProgressDto? Progress { get; set; }
     [Parameter] public bool IsAdmin { get; set; }
 
     private string GetColorClass()

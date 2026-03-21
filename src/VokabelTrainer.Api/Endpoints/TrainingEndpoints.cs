@@ -61,15 +61,23 @@ public static class TrainingEndpoints
             });
         }).RequireAuthorization();
 
-        app.MapGet("/training/result/{sessionId:int}", async (int sessionId, TrainingService trainingService, HttpContext ctx) =>
+        app.MapGet("/training/result/{sessionId:int}", async (int sessionId, TrainingService trainingService, ProgressService progressService, HttpContext ctx) =>
         {
             // Ensure session is completed (handles cases where user navigated away)
             await trainingService.CompleteSessionIfNeededAsync(sessionId);
             var result = await trainingService.GetSessionResultAsync(sessionId);
+            var userId = ctx.GetUserId();
+
+            // Load progress for the list (or global if cross-list training)
+            var listId = await trainingService.GetSessionListIdAsync(sessionId);
+            var progress = listId.HasValue
+                ? await progressService.GetListProgressAsync(userId, listId.Value)
+                : await progressService.GetGlobalProgressAsync(userId);
 
             return new RazorComponentResult<SessionResult>(new
             {
                 Result = result,
+                Progress = progress,
                 IsAdmin = ctx.User.IsInRole("Admin")
             });
         }).RequireAuthorization();
