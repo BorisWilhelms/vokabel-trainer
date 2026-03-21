@@ -32,7 +32,15 @@
 [data-theme="dark"] h3,
 [data-theme="dark"] .title,
 [data-theme="dark"] .subtitle {
-    color: #b8d8c8;
+    color: #8fd4b0;
+}
+
+[data-theme="dark"] .card .card-content .title {
+    color: #8fd4b0;
+}
+
+[data-theme="dark"] .card-footer-item {
+    color: #8fd4b0;
 }
 
 [data-theme="dark"] .card {
@@ -61,7 +69,7 @@
 }
 
 [data-theme="dark"] .prompt-card .prompt-word {
-    color: #b8d8c8;
+    color: #8fd4b0;
 }
 
 [data-theme="dark"] .notification.is-success {
