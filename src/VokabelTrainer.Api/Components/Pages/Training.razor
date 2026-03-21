@@ -1,0 +1,148 @@
+@page "/training/{SessionId:int}"
+@attribute [Authorize]
+@inject TrainingService TrainingService
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager Navigation
+
+@if (Feedback is not null)
+{
+    <div class="notification @(Feedback.IsCorrect ? "is-success" : "is-danger") mb-4">
+        @if (Feedback.IsCorrect)
+        {
+            <p><strong>Richtig!</strong> @FeedbackPrompt &rarr; @string.Join(", ", Feedback.CorrectAnswers)</p>
+        }
+        else
+        {
+            <p><strong>Falsch!</strong> @FeedbackPrompt &rarr; <strong>@string.Join(", ", Feedback.CorrectAnswers)</strong></p>
+            <p>Deine Antwort: @SubmittedAnswer</p>
+        }
+    </div>
+}
+
+@if (Question is not null)
+{
+    <progress class="progress is-primary mb-4" value="@(Question.CurrentIndex - 1)" max="@Question.TotalCount"></progress>
+    <p class="mb-2">Frage @Question.CurrentIndex von @Question.TotalCount</p>
+
+    <div class="is-flex is-align-items-center mb-3">
+        @if (Question.Direction == Direction.SourceToTarget)
+        {
+            <LanguageFlag FlagSvg="@Question.SourceFlagSvg" />
+            <span class="ml-1 mr-2">@Question.SourceLanguageName</span>
+            <span class="mr-2">&rarr;</span>
+            <LanguageFlag FlagSvg="@Question.TargetFlagSvg" />
+            <span class="ml-1">@Question.TargetLanguageName</span>
+        }
+        else
+        {
+            <LanguageFlag FlagSvg="@Question.TargetFlagSvg" />
+            <span class="ml-1 mr-2">@Question.TargetLanguageName</span>
+            <span class="mr-2">&rarr;</span>
+            <LanguageFlag FlagSvg="@Question.SourceFlagSvg" />
+            <span class="ml-1">@Question.SourceLanguageName</span>
+        }
+    </div>
+
+    <div class="box has-text-centered mb-5">
+        <p class="is-size-3">@Question.Prompt</p>
+    </div>
+
+    <form method="post" @formname="training-answer" @onsubmit="OnSubmit">
+        <AntiforgeryToken />
+        <input type="hidden" name="VocabularyId" value="@Question.VocabularyId" />
+        <input type="hidden" name="QuestionDirection" value="@((int)Question.Direction)" />
+        <input type="hidden" name="PreviousPrompt" value="@Question.Prompt" />
+
+        <div class="field">
+            <div class="control">
+                <input class="input is-medium" type="text" name="Answer" placeholder="Antwort" autofocus />
+            </div>
+        </div>
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">Pruefen</button>
+            </div>
+            @if (IsEndlos)
+            {
+                <div class="control">
+                    <button type="submit" name="Action" value="abort" class="button is-warning is-outlined">Abbrechen</button>
+                </div>
+            }
+        </div>
+    </form>
+}
+
+@code {
+    [Parameter]
+    public int SessionId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "mode")]
+    public string? Mode { get; set; }
+
+    [SupplyParameterFromForm]
+    private string? Answer { get; set; }
+
+    [SupplyParameterFromForm]
+    private int? VocabularyId { get; set; }
+
+    [SupplyParameterFromForm]
+    private int? QuestionDirection { get; set; }
+
+    [SupplyParameterFromForm]
+    private string? PreviousPrompt { get; set; }
+
+    [SupplyParameterFromForm]
+    private string? Action { get; set; }
+
+    private TrainingQuestionDto? Question;
+    private SubmitAnswerResponse? Feedback;
+    private string? SubmittedAnswer;
+    private string? FeedbackPrompt;
+    private bool IsEndlos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsEndlos = string.Equals(Mode, "Endlos", StringComparison.OrdinalIgnoreCase);
+
+        // On GET, load the first question
+        var httpContext = HttpContextAccessor.HttpContext!;
+        if (httpContext.Request.Method != "POST")
+        {
+            Question = await TrainingService.GetNextQuestionAsync(SessionId);
+            if (Question is null)
+            {
+                Navigation.NavigateTo($"/training/result/{SessionId}", forceLoad: true);
+            }
+        }
+    }
+
+    private async Task OnSubmit()
+    {
+        if (string.Equals(Action, "abort", StringComparison.OrdinalIgnoreCase))
+        {
+            await TrainingService.AbortSessionAsync(SessionId);
+            Navigation.NavigateTo($"/training/result/{SessionId}", forceLoad: true);
+            return;
+        }
+
+        if (VocabularyId.HasValue && Answer is not null)
+        {
+            var direction = (Direction)(QuestionDirection ?? 0);
+            SubmittedAnswer = Answer;
+            FeedbackPrompt = PreviousPrompt;
+            Feedback = await TrainingService.SubmitAnswerAsync(SessionId, VocabularyId.Value, direction, Answer);
+
+            if (Feedback.SessionComplete)
+            {
+                Navigation.NavigateTo($"/training/result/{SessionId}", forceLoad: true);
+                return;
+            }
+        }
+
+        Question = await TrainingService.GetNextQuestionAsync(SessionId);
+        if (Question is null)
+        {
+            Navigation.NavigateTo($"/training/result/{SessionId}", forceLoad: true);
+        }
+    }
+}

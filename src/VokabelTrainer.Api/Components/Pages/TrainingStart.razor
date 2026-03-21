@@ -1,0 +1,99 @@
+@page "/training/start"
+@page "/training/start/{ListId:int}"
+@attribute [Authorize]
+@inject VocabularyListService ListService
+@inject TrainingService TrainingService
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager Navigation
+
+<h1 class="title">Training starten</h1>
+
+@if (listSummary is not null)
+{
+    <div class="box mb-5">
+        <p class="title is-5">@listSummary.Name</p>
+        <div class="is-flex is-align-items-center mb-2">
+            <LanguageFlag FlagSvg="@listSummary.SourceFlagSvg" />
+            <span class="ml-1 mr-2">@listSummary.SourceLanguageName</span>
+            <span class="mr-2">&rarr;</span>
+            <LanguageFlag FlagSvg="@listSummary.TargetFlagSvg" />
+            <span class="ml-1">@listSummary.TargetLanguageName</span>
+        </div>
+        <p class="mb-2">@listSummary.VocabularyCount Vokabeln</p>
+        <BoxDistribution Distribution="@listSummary.BoxDistribution" />
+    </div>
+}
+
+<form method="post" @formname="training-start" @onsubmit="OnSubmit">
+    <AntiforgeryToken />
+
+    <div class="field">
+        <label class="label">Modus</label>
+        <div class="control">
+            <label class="radio">
+                <input type="radio" name="SelectedMode" value="SinglePass" checked="@(SelectedMode != "Endlos")" />
+                Einfacher Durchlauf
+            </label>
+        </div>
+        <div class="control">
+            <label class="radio">
+                <input type="radio" name="SelectedMode" value="Endlos" checked="@(SelectedMode == "Endlos")" />
+                Endlos (falsche Vokabeln wiederholen)
+            </label>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label" for="max-vocab">Max. Vokabeln (optional)</label>
+        <div class="control">
+            <input id="max-vocab" class="input" type="number" name="MaxVocabularyInput" style="max-width:200px"
+                   min="1" value="@MaxVocabularyInput" />
+        </div>
+    </div>
+
+    <div class="field is-grouped">
+        <div class="control">
+            <button type="submit" class="button is-primary">Starten</button>
+        </div>
+        <div class="control">
+            <a href="/" class="button is-light">Abbrechen</a>
+        </div>
+    </div>
+</form>
+
+@code {
+    [Parameter]
+    public int? ListId { get; set; }
+
+    [SupplyParameterFromForm]
+    private string? SelectedMode { get; set; }
+
+    [SupplyParameterFromForm]
+    private int? MaxVocabularyInput { get; set; }
+
+    private VocabularyListSummaryDto? listSummary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        SelectedMode ??= "SinglePass";
+
+        var userId = GetUserId();
+
+        if (ListId.HasValue)
+        {
+            var allLists = await ListService.GetAllForUserAsync(userId);
+            listSummary = allLists.FirstOrDefault(l => l.Id == ListId.Value);
+        }
+    }
+
+    private async Task OnSubmit()
+    {
+        var userId = GetUserId();
+        var mode = SelectedMode == "Endlos" ? TrainingMode.Endlos : TrainingMode.SinglePass;
+        var sessionId = await TrainingService.StartSessionAsync(userId, ListId, mode, MaxVocabularyInput);
+        Navigation.NavigateTo($"/training/{sessionId}?mode={mode}", forceLoad: true);
+    }
+
+    private int GetUserId() =>
+        int.Parse(HttpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+}

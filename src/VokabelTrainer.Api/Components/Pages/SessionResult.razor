@@ -1,0 +1,75 @@
+@page "/training/result/{SessionId:int}"
+@attribute [Authorize]
+@inject TrainingService TrainingService
+@inject NavigationManager Navigation
+
+@if (result is not null)
+{
+    <h1 class="title">Ergebnis</h1>
+
+    <div class="has-text-centered mb-5">
+        <p class="is-size-1 has-text-weight-bold has-text-@GetColorClass()">
+            @result.SuccessRate %
+        </p>
+        <p class="is-size-4">@result.CorrectAnswers von @result.TotalQuestions richtig</p>
+    </div>
+
+    @if (result.WrongAnswers.Count > 0)
+    {
+        <h2 class="title is-5">Falsche Antworten</h2>
+        <div class="table-container">
+            <table class="table is-fullwidth is-striped">
+                <thead>
+                    <tr>
+                        <th>Begriff</th>
+                        <th>Korrekte Antworten</th>
+                        <th>Deine Antwort</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var wrong in result.WrongAnswers)
+                    {
+                        <tr>
+                            <td>@wrong.Term</td>
+                            <td>@string.Join(", ", wrong.CorrectTranslations)</td>
+                            <td class="has-text-danger">@wrong.GivenAnswer</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <div class="field is-grouped mt-5">
+        <div class="control">
+            <a href="/training/start" class="button is-primary">Nochmal trainieren</a>
+        </div>
+        <div class="control">
+            <a href="/" class="button is-light">Zurueck</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="notification is-warning">Ergebnis nicht gefunden.</div>
+    <a href="/" class="button is-light">Zurueck</a>
+}
+
+@code {
+    [Parameter]
+    public int SessionId { get; set; }
+
+    private SessionResultDto? result;
+
+    protected override async Task OnInitializedAsync()
+    {
+        result = await TrainingService.GetSessionResultAsync(SessionId);
+    }
+
+    private string GetColorClass()
+    {
+        if (result!.SuccessRate > 70) return "success";
+        if (result.SuccessRate > 40) return "warning";
+        return "danger";
+    }
+}
