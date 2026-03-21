@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using VokabelTrainer.Api.Data;
@@ -24,6 +25,20 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
             }
             context.Response.Redirect(context.RedirectUri);
             return Task.CompletedTask;
+        };
+        options.Events.OnValidatePrincipal = async context =>
+        {
+            var userId = context.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (userId is not null)
+            {
+                var authService = context.HttpContext.RequestServices.GetRequiredService<AuthService>();
+                var user = await authService.GetByIdAsync(int.Parse(userId));
+                if (user is null)
+                {
+                    context.RejectPrincipal();
+                    await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                }
+            }
         };
         options.Events.OnRedirectToAccessDenied = context =>
         {
