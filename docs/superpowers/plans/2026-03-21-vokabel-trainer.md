@@ -8,7 +8,7 @@
 
 **Tech Stack:** .NET 10, ASP.NET Core, Blazor WASM, EF Core, SQLite, Chart.js (via JS interop), IStringLocalizer for localization.
 
-**Compiler Settings:** Alle Projekte: `<Nullable>enable</Nullable>`, `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>` in den `.csproj`-Dateien.
+**Compiler Settings:** Gemeinsame Properties (TargetFramework, Nullable, TreatWarningsAsErrors) in `Directory.Build.props` im Solution-Root.
 
 **Spec:** `docs/superpowers/specs/2026-03-21-vokabel-trainer-design.md`
 
@@ -18,6 +18,7 @@
 
 ```
 VokabelTrainer.sln
+Directory.Build.props              # Shared: TargetFramework, Nullable, TreatWarningsAsErrors
 
 src/VokabelTrainer.Shared/
   VokabelTrainer.Shared.csproj
@@ -197,18 +198,22 @@ dotnet add package Microsoft.EntityFrameworkCore.InMemory
 dotnet add package FluentAssertions
 ```
 
-- [ ] **Step 4: Configure compiler settings**
+- [ ] **Step 4: Create Directory.Build.props**
 
-Add to all four `.csproj` files (Shared, Api, Client, Tests):
+Create `Directory.Build.props` im Solution-Root mit gemeinsamen Properties:
 
 ```xml
-<PropertyGroup>
-  <Nullable>enable</Nullable>
-  <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-</PropertyGroup>
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>
 ```
 
-Note: Blazor WASM und xunit Templates setzen `Nullable` evtl. schon. `TreatWarningsAsErrors` muss explizit hinzugefuegt werden. Sicherstellen dass der Build danach warning-frei ist.
+Aus allen vier `.csproj`-Dateien `TargetFramework`, `Nullable`, `ImplicitUsings` und ggf. `TreatWarningsAsErrors` entfernen — wird automatisch von `Directory.Build.props` geerbt. Sicherstellen dass der Build danach warning-frei ist.
 
 - [ ] **Step 5: Add .gitignore**
 
