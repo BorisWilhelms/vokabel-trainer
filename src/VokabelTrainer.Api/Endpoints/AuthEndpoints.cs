@@ -9,7 +9,7 @@ public static class AuthEndpoints
 {
     public static WebApplication MapAuthEndpoints(this WebApplication app)
     {
-        app.MapPost("/login", async (HttpContext ctx, AuthService authService) =>
+        app.MapPost("/form/login", async (HttpContext ctx, AuthService authService) =>
         {
             var form = await ctx.Request.ReadFormAsync();
             var username = form["Username"].FirstOrDefault() ?? "";
@@ -49,7 +49,7 @@ public static class AuthEndpoints
             return Results.Redirect("/");
         }).DisableAntiforgery();
 
-        app.MapPost("/logout", async (HttpContext ctx) =>
+        app.MapPost("/form/logout", async (HttpContext ctx) =>
         {
             await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Results.Redirect("/login");

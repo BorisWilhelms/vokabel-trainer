@@ -46,7 +46,7 @@
         <p class="prompt-word">@_question.Prompt</p>
     </div>
 
-    <form method="post" action="/training/@SessionId/submit">
+    <form method="post" action="/form/training/@SessionId/submit">
         <input type="hidden" name="VocabularyId" value="@_question.VocabularyId" />
         <input type="hidden" name="QuestionDirection" value="@((int)_question.Direction)" />
         <input type="hidden" name="PreviousPrompt" value="@_question.Prompt" />

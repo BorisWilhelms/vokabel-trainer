@@ -6,7 +6,7 @@
 
 <div class="box">
     <h2 class="subtitle">Neuen Benutzer anlegen</h2>
-    <form method="post" action="/admin/users">
+    <form method="post" action="/form/admin/users">
         <div class="field has-addons">
             <div class="control is-expanded">
                 <input type="text" name="NewUsername" class="input" placeholder="Benutzername" />
@@ -47,10 +47,10 @@
                     </td>
                     <td>
                         <div class="buttons are-small">
-                            <form method="post" action="/admin/users/@user.Id/reset">
+                            <form method="post" action="/form/admin/users/@user.Id/reset">
                                 <button type="submit" class="button is-small is-warning">Passwort zuruecksetzen</button>
                             </form>
-                            <form method="post" action="/admin/users/@user.Id/delete">
+                            <form method="post" action="/form/admin/users/@user.Id/delete">
                                 <button type="submit" class="button is-small is-danger" onclick="return confirm('Benutzer wirklich loeschen?')">Loeschen</button>
                             </form>
                         </div>

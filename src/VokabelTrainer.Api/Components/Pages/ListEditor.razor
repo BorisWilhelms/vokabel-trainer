@@ -8,7 +8,7 @@
 
 <h1 class="title">@(Id.HasValue ? "Liste bearbeiten" : "Neue Liste")</h1>
 
-<form method="post" action="@(Id.HasValue ? $"/lists/{Id}" : "/lists")">
+<form method="post" action="@(Id.HasValue ? $"/form/lists/{Id}" : "/form/lists")">
     <div class="field">
         <label class="label" for="name-input">Name</label>
         <div class="control">

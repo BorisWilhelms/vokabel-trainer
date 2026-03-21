@@ -7,7 +7,7 @@ public static class ListEndpoints
 {
     public static WebApplication MapListEndpoints(this WebApplication app)
     {
-        app.MapPost("/lists", async (HttpContext ctx, VocabularyListService listService) =>
+        app.MapPost("/form/lists", async (HttpContext ctx, VocabularyListService listService) =>
         {
             var userId = ctx.GetUserId();
             var form = await ctx.Request.ReadFormAsync();
@@ -23,7 +23,7 @@ public static class ListEndpoints
             return Results.Redirect("/");
         }).RequireAuthorization().DisableAntiforgery();
 
-        app.MapPost("/lists/{id:int}", async (int id, HttpContext ctx, VocabularyListService listService) =>
+        app.MapPost("/form/lists/{id:int}", async (int id, HttpContext ctx, VocabularyListService listService) =>
         {
             var userId = ctx.GetUserId();
             var form = await ctx.Request.ReadFormAsync();

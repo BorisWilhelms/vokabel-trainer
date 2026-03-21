@@ -7,7 +7,7 @@ public static class TrainingEndpoints
 {
     public static WebApplication MapTrainingEndpoints(this WebApplication app)
     {
-        app.MapPost("/training/start", async (HttpContext ctx, TrainingService trainingService) =>
+        app.MapPost("/form/training/start", async (HttpContext ctx, TrainingService trainingService) =>
         {
             var userId = ctx.GetUserId();
             var form = await ctx.Request.ReadFormAsync();
@@ -25,7 +25,7 @@ public static class TrainingEndpoints
             return Results.Redirect($"/training/{sessionId}?mode={mode}");
         }).RequireAuthorization().DisableAntiforgery();
 
-        app.MapPost("/training/{sessionId:int}/submit", async (int sessionId, HttpContext ctx, TrainingService trainingService) =>
+        app.MapPost("/form/training/{sessionId:int}/submit", async (int sessionId, HttpContext ctx, TrainingService trainingService) =>
         {
             var form = await ctx.Request.ReadFormAsync();
             var action = form["Action"].FirstOrDefault();
