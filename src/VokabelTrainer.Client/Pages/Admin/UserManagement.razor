@@ -1,0 +1,158 @@
+@page "/admin/users"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Admin")]
+
+@inject ApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudText Typo="Typo.h5" Class="mb-4">Benutzerverwaltung</MudText>
+
+    <MudCard Class="mb-4">
+        <MudCardContent>
+            <MudText Typo="Typo.h6" Class="mb-3">Neuen Benutzer anlegen</MudText>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudTextField @bind-Value="_newUsername"
+                              Label="Benutzername"
+                              Variant="Variant.Outlined"
+                              Style="max-width: 300px;" />
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="@HandleCreateUser"
+                           Disabled="@_isCreating">
+                    Benutzer anlegen
+                </MudButton>
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
+
+    @if (_users is null)
+    {
+        <MudProgressCircular Indeterminate="true" />
+    }
+    else
+    {
+        <MudTable Items="_users" Hover="true" Striped="true">
+            <HeaderContent>
+                <MudTh>Benutzername</MudTh>
+                <MudTh>Rolle</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Aktionen</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Benutzername">@context.Username</MudTd>
+                <MudTd DataLabel="Rolle">@context.Role</MudTd>
+                <MudTd DataLabel="Status">
+                    @if (context.IsInitialized)
+                    {
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small">Initialisiert</MudChip>
+                    }
+                    else
+                    {
+                        <MudChip T="string" Color="Color.Warning" Size="Size.Small">Nicht initialisiert</MudChip>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Aktionen">
+                    <MudTooltip Text="Passwort zurücksetzen">
+                        <MudIconButton Icon="@Icons.Material.Filled.LockReset"
+                                       Color="Color.Primary"
+                                       OnClick="@(() => HandleResetPassword(context))" />
+                    </MudTooltip>
+                    <MudTooltip Text="Löschen">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Color="Color.Error"
+                                       OnClick="@(() => HandleDeleteUser(context))" />
+                    </MudTooltip>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudContainer>
+
+@code {
+    private List<UserDto>? _users;
+    private string _newUsername = string.Empty;
+    private bool _isCreating;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _users = await ApiClient.GetUsersAsync();
+    }
+
+    private async Task HandleCreateUser()
+    {
+        if (string.IsNullOrWhiteSpace(_newUsername))
+        {
+            Snackbar.Add("Bitte einen Benutzernamen eingeben.", Severity.Warning);
+            return;
+        }
+
+        _isCreating = true;
+        try
+        {
+            await ApiClient.CreateUserAsync(new CreateUserRequest(_newUsername));
+            _newUsername = string.Empty;
+            Snackbar.Add("Benutzer wurde angelegt.", Severity.Success);
+            await LoadUsers();
+        }
+        catch
+        {
+            Snackbar.Add("Benutzer konnte nicht angelegt werden.", Severity.Error);
+        }
+        finally
+        {
+            _isCreating = false;
+        }
+    }
+
+    private async Task HandleResetPassword(UserDto user)
+    {
+        var result = await DialogService.ShowMessageBoxAsync(
+            "Passwort zurücksetzen",
+            $"Soll das Passwort für Benutzer \"{user.Username}\" wirklich zurückgesetzt werden?",
+            yesText: "Zurücksetzen",
+            cancelText: "Abbrechen");
+
+        if (result != true)
+            return;
+
+        try
+        {
+            await ApiClient.ResetPasswordAsync(user.Id);
+            Snackbar.Add($"Passwort für \"{user.Username}\" wurde zurückgesetzt.", Severity.Success);
+            await LoadUsers();
+        }
+        catch
+        {
+            Snackbar.Add("Passwort konnte nicht zurückgesetzt werden.", Severity.Error);
+        }
+    }
+
+    private async Task HandleDeleteUser(UserDto user)
+    {
+        var result = await DialogService.ShowMessageBoxAsync(
+            "Benutzer löschen",
+            $"Soll der Benutzer \"{user.Username}\" wirklich gelöscht werden?",
+            yesText: "Löschen",
+            cancelText: "Abbrechen");
+
+        if (result != true)
+            return;
+
+        try
+        {
+            await ApiClient.DeleteUserAsync(user.Id);
+            Snackbar.Add($"Benutzer \"{user.Username}\" wurde gelöscht.", Severity.Success);
+            await LoadUsers();
+        }
+        catch
+        {
+            Snackbar.Add("Benutzer konnte nicht gelöscht werden.", Severity.Error);
+        }
+    }
+}
