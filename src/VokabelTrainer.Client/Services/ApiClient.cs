@@ -86,7 +86,13 @@ public class ApiClient(HttpClient http)
     }
 
     public async Task<TrainingQuestionDto?> GetNextQuestionAsync(int sessionId)
-        => await http.GetFromJsonAsync<TrainingQuestionDto?>($"api/training/next-question/{sessionId}");
+    {
+        var response = await http.GetAsync($"api/training/next-question/{sessionId}");
+        if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+            return null;
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<TrainingQuestionDto>();
+    }
 
     public async Task<SubmitAnswerResponse?> SubmitAnswerAsync(SubmitAnswerRequest request)
     {

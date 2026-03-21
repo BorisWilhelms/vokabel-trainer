@@ -23,7 +23,7 @@ public class TrainingController(TrainingService trainingService) : ControllerBas
     {
         var question = await trainingService.GetNextQuestionAsync(sessionId);
         if (question is null)
-            return NotFound();
+            return NoContent();
         return Ok(question);
     }
 
