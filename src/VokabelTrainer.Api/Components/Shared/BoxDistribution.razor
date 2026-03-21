@@ -1,0 +1,18 @@
+@if (Distribution is not null)
+{
+    var total = Distribution.Box1 + Distribution.Box2 + Distribution.Box3 + Distribution.Box4 + Distribution.Box5;
+    if (total > 0)
+    {
+        <div class="box-bar">
+            @if (Distribution.Box1 > 0) { <div class="box-1" style="flex:@Distribution.Box1"></div> }
+            @if (Distribution.Box2 > 0) { <div class="box-2" style="flex:@Distribution.Box2"></div> }
+            @if (Distribution.Box3 > 0) { <div class="box-3" style="flex:@Distribution.Box3"></div> }
+            @if (Distribution.Box4 > 0) { <div class="box-4" style="flex:@Distribution.Box4"></div> }
+            @if (Distribution.Box5 > 0) { <div class="box-5" style="flex:@Distribution.Box5"></div> }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public BoxDistributionDto? Distribution { get; set; }
+}
