@@ -46,10 +46,21 @@
         </div>
 
         <div class="field">
-            <label class="label">CSV importieren</label>
-            <div class="control">
-                <input type="file" accept=".csv" onchange="handleCsvImport(this)" />
+            <label class="label">Importieren</label>
+            <div class="control buttons">
+                <label class="button is-outlined">
+                    <span>CSV importieren</span>
+                    <input type="file" accept=".csv" onchange="handleCsvImport(this)" style="display:none" />
+                </label>
+                @if (OcrEnabled)
+                {
+                    <label class="button is-outlined" id="ocr-btn">
+                        <span>Foto(s) scannen</span>
+                        <input type="file" accept="image/*" multiple onchange="handleOcrImport(this)" style="display:none" />
+                    </label>
+                }
             </div>
+            <div id="ocr-status" class="help"></div>
         </div>
 
         <div class="field">
@@ -109,6 +120,47 @@
         reader.readAsText(file);
     }
 
+    async function handleOcrImport(input) {
+        var files = input.files;
+        if (!files.length) return;
+
+        var status = document.getElementById('ocr-status');
+        var textarea = document.getElementById('vocabulary-textarea');
+        var btn = document.getElementById('ocr-btn');
+
+        status.textContent = 'Scanne ' + files.length + ' Foto(s)...';
+        status.className = 'help is-info';
+        btn.classList.add('is-loading');
+
+        var formData = new FormData();
+        for (var i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+        }
+
+        try {
+            var response = await fetch('/lists/ocr', { method: 'POST', body: formData });
+            var data = await response.json();
+
+            if (data.error) {
+                status.textContent = data.error;
+                status.className = 'help is-danger';
+            } else if (data.text) {
+                textarea.value = textarea.value
+                    ? textarea.value + '\n' + data.text
+                    : data.text;
+                var lineCount = data.text.split('\n').filter(function(l) { return l.trim(); }).length;
+                status.textContent = lineCount + ' Vokabeln aus Foto(s) erkannt.';
+                status.className = 'help is-success';
+            }
+        } catch (e) {
+            status.textContent = 'Fehler beim Scannen: ' + e.message;
+            status.className = 'help is-danger';
+        } finally {
+            btn.classList.remove('is-loading');
+            input.value = '';
+        }
+    }
+
     function parseCsvLine(line) {
         var result = [];
         var current = '';
@@ -143,4 +195,5 @@
     [Parameter] public string RawVocabulary { get; set; } = "";
     [Parameter] public List<LanguageDto>? Languages { get; set; }
     [Parameter] public bool IsAdmin { get; set; }
+    [Parameter] public bool OcrEnabled { get; set; }
 }
