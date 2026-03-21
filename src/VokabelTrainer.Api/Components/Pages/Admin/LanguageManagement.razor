@@ -33,15 +33,6 @@
                 <div class="control">
                     <textarea name="FormFlagSvg" class="textarea" rows="4" placeholder="SVG-Code der Flagge">@(EditLanguage?.FlagSvg)</textarea>
                 </div>
-                @if (EditLanguage is not null && AiEnabled)
-                {
-                    <form method="post" action="/admin/languages/@EditLanguage.Id/generate-flag" class="mt-2">
-                        <button type="submit" class="button is-small is-primary is-light"
-                                onclick="this.classList.add('is-loading')">
-                            Flagge mit AI generieren
-                        </button>
-                    </form>
-                }
             </div>
             <div class="field is-grouped">
                 <div class="control">
@@ -57,6 +48,15 @@
                 }
             </div>
         </form>
+        @if (EditLanguage is not null && AiEnabled)
+        {
+            <form method="post" action="/admin/languages/@EditLanguage.Id/generate-flag" class="mt-3">
+                <button type="submit" class="button is-small is-primary is-light"
+                        onclick="this.classList.add('is-loading')">
+                    Flagge mit AI generieren
+                </button>
+            </form>
+        }
     </div>
 
     @if (Languages is not null)
