@@ -1,0 +1,111 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@layout LoginLayout
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@inject AuthService AuthService
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager NavigationManager
+
+<h3 class="title has-text-centered">@(isSetup ? "Admin erstellen" : "Anmelden")</h3>
+
+@if (errorMessage is not null)
+{
+    <div class="notification is-danger">
+        @errorMessage
+    </div>
+}
+
+<EditForm Model="Input!" method="post" OnValidSubmit="HandleSubmit" FormName="login">
+    <div class="field">
+        <label class="label" for="username">Benutzername</label>
+        <div class="control">
+            <InputText id="username" class="input" @bind-Value="Input!.Username" />
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label" for="password">Passwort</label>
+        <div class="control">
+            <InputText id="password" type="password" class="input" @bind-Value="Input!.Password" />
+        </div>
+    </div>
+
+    @if (isSetup)
+    {
+        <div class="field">
+            <label class="label" for="password-confirm">Passwort wiederholen</label>
+            <div class="control">
+                <InputText id="password-confirm" type="password" class="input" @bind-Value="Input!.PasswordConfirmation" />
+            </div>
+        </div>
+    }
+
+    <div class="field">
+        <button type="submit" class="button is-primary is-fullwidth">
+            @(isSetup ? "Erstellen" : "Anmelden")
+        </button>
+    </div>
+</EditForm>
+
+@code {
+    private bool isSetup;
+    private string? errorMessage;
+
+    [SupplyParameterFromForm]
+    private LoginModel? Input { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new();
+        isSetup = await AuthService.NeedsInitialSetupAsync();
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+        var input = Input!;
+
+        if (string.IsNullOrWhiteSpace(input.Username) || string.IsNullOrWhiteSpace(input.Password))
+        {
+            errorMessage = "Benutzername und Passwort sind erforderlich.";
+            return;
+        }
+
+        if (isSetup && input.Password != input.PasswordConfirmation)
+        {
+            errorMessage = "Die Passw\u00f6rter stimmen nicht \u00fcberein.";
+            return;
+        }
+
+        var result = await AuthService.LoginOrSetupAsync(input.Username, input.Password);
+        if (result is null)
+        {
+            errorMessage = "Benutzername oder Passwort ist falsch.";
+            return;
+        }
+
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, result.UserId.ToString()),
+            new(ClaimTypes.Name, result.Username),
+            new(ClaimTypes.Role, result.Role.ToString())
+        };
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await HttpContextAccessor.HttpContext!.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            principal);
+
+        NavigationManager.NavigateTo("/", forceLoad: true);
+    }
+
+    private class LoginModel
+    {
+        public string Username { get; set; } = "";
+        public string Password { get; set; } = "";
+        public string PasswordConfirmation { get; set; } = "";
+    }
+}
