@@ -1,82 +1,64 @@
-@page "/training/start"
-@page "/training/start/{ListId:int}"
-@attribute [Authorize]
-@inject VocabularyListService ListService
-@inject IHttpContextAccessor HttpContextAccessor
+<PageLayout IsAdmin="@IsAdmin">
+    <h1 class="title">Training starten</h1>
 
-<h1 class="title">Training starten</h1>
-
-@if (listSummary is not null)
-{
-    <div class="box mb-5">
-        <p class="title is-5">@listSummary.Name</p>
-        <div class="is-flex is-align-items-center mb-2">
-            <LanguageFlag FlagSvg="@listSummary.SourceFlagSvg" />
-            <span class="ml-1 mr-2">@listSummary.SourceLanguageName</span>
-            <span class="mr-2">&rarr;</span>
-            <LanguageFlag FlagSvg="@listSummary.TargetFlagSvg" />
-            <span class="ml-1">@listSummary.TargetLanguageName</span>
-        </div>
-        <p class="mb-2">@listSummary.VocabularyCount Vokabeln</p>
-        <BoxDistribution Distribution="@listSummary.BoxDistribution" />
-    </div>
-}
-
-<form method="post" action="/form/training/start">
-    @if (ListId.HasValue)
+    @if (ListSummary is not null)
     {
-        <input type="hidden" name="ListId" value="@ListId" />
+        <div class="box mb-5">
+            <p class="title is-5">@ListSummary.Name</p>
+            <div class="is-flex is-align-items-center mb-2">
+                <LanguageFlag FlagSvg="@ListSummary.SourceFlagSvg" />
+                <span class="ml-1 mr-2">@ListSummary.SourceLanguageName</span>
+                <span class="mr-2">&rarr;</span>
+                <LanguageFlag FlagSvg="@ListSummary.TargetFlagSvg" />
+                <span class="ml-1">@ListSummary.TargetLanguageName</span>
+            </div>
+            <p class="mb-2">@ListSummary.VocabularyCount Vokabeln</p>
+            <BoxDistribution Distribution="@ListSummary.BoxDistribution" />
+        </div>
     }
 
-    <div class="field">
-        <label class="label">Modus</label>
-        <div class="control">
-            <label class="radio">
-                <input type="radio" name="SelectedMode" value="SinglePass" checked />
-                Einfacher Durchlauf
-            </label>
-        </div>
-        <div class="control">
-            <label class="radio">
-                <input type="radio" name="SelectedMode" value="Endlos" />
-                Endlos (falsche Vokabeln wiederholen)
-            </label>
-        </div>
-    </div>
+    <form method="post" action="/training/start">
+        @if (ListId.HasValue)
+        {
+            <input type="hidden" name="ListId" value="@ListId" />
+        }
 
-    <div class="field">
-        <label class="label" for="max-vocab">Max. Vokabeln (optional)</label>
-        <div class="control">
-            <input id="max-vocab" class="input" type="number" name="MaxVocabularyInput" style="max-width:200px" min="1" />
+        <div class="field">
+            <label class="label">Modus</label>
+            <div class="control">
+                <label class="radio">
+                    <input type="radio" name="SelectedMode" value="SinglePass" checked />
+                    Einfacher Durchlauf
+                </label>
+            </div>
+            <div class="control">
+                <label class="radio">
+                    <input type="radio" name="SelectedMode" value="Endlos" />
+                    Endlos (falsche Vokabeln wiederholen)
+                </label>
+            </div>
         </div>
-    </div>
 
-    <div class="field is-grouped">
-        <div class="control">
-            <button type="submit" class="button is-primary">Starten</button>
+        <div class="field">
+            <label class="label" for="max-vocab">Max. Vokabeln (optional)</label>
+            <div class="control">
+                <input id="max-vocab" class="input" type="number" name="MaxVocabularyInput" style="max-width:200px" min="1" />
+            </div>
         </div>
-        <div class="control">
-            <a href="/" class="button is-light">Abbrechen</a>
+
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">Starten</button>
+            </div>
+            <div class="control">
+                <a href="/" class="button is-light">Abbrechen</a>
+            </div>
         </div>
-    </div>
-</form>
+    </form>
+</PageLayout>
 
 @code {
-    [Parameter]
-    public int? ListId { get; set; }
-
-    private VocabularyListSummaryDto? listSummary;
-
-    protected override async Task OnInitializedAsync()
-    {
-        if (ListId.HasValue)
-        {
-            var userId = GetUserId();
-            var allLists = await ListService.GetAllForUserAsync(userId);
-            listSummary = allLists.FirstOrDefault(l => l.Id == ListId.Value);
-        }
-    }
-
-    private int GetUserId() =>
-        int.Parse(HttpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    [Parameter] public int? ListId { get; set; }
+    [Parameter] public VocabularyListSummaryDto? ListSummary { get; set; }
+    [Parameter] public bool IsAdmin { get; set; }
 }

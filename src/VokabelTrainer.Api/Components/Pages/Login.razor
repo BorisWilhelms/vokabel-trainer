@@ -1,65 +1,47 @@
-@page "/login"
-@attribute [AllowAnonymous]
-@layout LoginLayout
-@inject AuthService AuthService
+<PageLayout ShowNavbar="false">
+    <h3 class="title has-text-centered">@(IsSetup ? "Admin erstellen" : "Anmelden")</h3>
 
-<h3 class="title has-text-centered">@(isSetup ? "Admin erstellen" : "Anmelden")</h3>
-
-@if (ErrorMessage is not null)
-{
-    <div class="notification is-danger">
-        @ErrorMessage
-    </div>
-}
-
-<form method="post" action="/form/login">
-    <div class="field">
-        <label class="label" for="username">Benutzername</label>
-        <div class="control">
-            <input id="username" class="input" type="text" name="Username" />
-        </div>
-    </div>
-
-    <div class="field">
-        <label class="label" for="password">Passwort</label>
-        <div class="control">
-            <input id="password" type="password" class="input" name="Password" />
-        </div>
-    </div>
-
-    @if (isSetup)
+    @if (ErrorMessage is not null)
     {
+        <div class="notification is-danger">
+            @ErrorMessage
+        </div>
+    }
+
+    <form method="post" action="/login">
         <div class="field">
-            <label class="label" for="password-confirm">Passwort wiederholen</label>
+            <label class="label" for="username">Benutzername</label>
             <div class="control">
-                <input id="password-confirm" type="password" class="input" name="PasswordConfirmation" />
+                <input id="username" class="input" type="text" name="Username" />
             </div>
         </div>
-    }
 
-    <div class="field">
-        <button type="submit" class="button is-primary is-fullwidth">
-            @(isSetup ? "Erstellen" : "Anmelden")
-        </button>
-    </div>
-</form>
+        <div class="field">
+            <label class="label" for="password">Passwort</label>
+            <div class="control">
+                <input id="password" type="password" class="input" name="Password" />
+            </div>
+        </div>
+
+        @if (IsSetup)
+        {
+            <div class="field">
+                <label class="label" for="password-confirm">Passwort wiederholen</label>
+                <div class="control">
+                    <input id="password-confirm" type="password" class="input" name="PasswordConfirmation" />
+                </div>
+            </div>
+        }
+
+        <div class="field">
+            <button type="submit" class="button is-primary is-fullwidth">
+                @(IsSetup ? "Erstellen" : "Anmelden")
+            </button>
+        </div>
+    </form>
+</PageLayout>
 
 @code {
-    private bool isSetup;
-
-    [SupplyParameterFromQuery(Name = "error")]
-    public string? Error { get; set; }
-
-    private string? ErrorMessage => Error switch
-    {
-        "credentials" => "Benutzername und Passwort sind erforderlich.",
-        "mismatch" => "Die Passwoerter stimmen nicht ueberein.",
-        "invalid" => "Benutzername oder Passwort ist falsch.",
-        _ => null
-    };
-
-    protected override async Task OnInitializedAsync()
-    {
-        isSetup = await AuthService.NeedsInitialSetupAsync();
-    }
+    [Parameter] public bool IsSetup { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
 }

@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Http.HttpResults;
+using VokabelTrainer.Api.Components.Pages;
 using VokabelTrainer.Api.Services;
 
 namespace VokabelTrainer.Api.Endpoints;
@@ -9,7 +11,26 @@ public static class AuthEndpoints
 {
     public static WebApplication MapAuthEndpoints(this WebApplication app)
     {
-        app.MapPost("/form/login", async (HttpContext ctx, AuthService authService) =>
+        app.MapGet("/login", async (AuthService authService, string? error) =>
+        {
+            var isSetup = await authService.NeedsInitialSetupAsync();
+
+            string? errorMessage = error switch
+            {
+                "credentials" => "Benutzername und Passwort sind erforderlich.",
+                "mismatch" => "Die Passwoerter stimmen nicht ueberein.",
+                "invalid" => "Benutzername oder Passwort ist falsch.",
+                _ => null
+            };
+
+            return new RazorComponentResult<Login>(new
+            {
+                IsSetup = isSetup,
+                ErrorMessage = errorMessage
+            });
+        });
+
+        app.MapPost("/login", async (HttpContext ctx, AuthService authService) =>
         {
             var form = await ctx.Request.ReadFormAsync();
             var username = form["Username"].FirstOrDefault() ?? "";
@@ -49,7 +70,7 @@ public static class AuthEndpoints
             return Results.Redirect("/");
         }).DisableAntiforgery();
 
-        app.MapPost("/form/logout", async (HttpContext ctx) =>
+        app.MapPost("/logout", async (HttpContext ctx) =>
         {
             await ctx.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Results.Redirect("/login");

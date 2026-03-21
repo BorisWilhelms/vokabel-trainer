@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vokabel Trainer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1/css/bulma.min.css" />
+    <link rel="stylesheet" href="/css/app.css" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/favicon.png" />
+    <meta name="theme-color" content="#2d6a4f" />
+</head>
+<body>
+    @if (ShowNavbar)
+    {
+        <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+            <div class="navbar-brand">
+                <a class="navbar-item has-text-weight-bold" href="/">Vokabel Trainer</a>
+                <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="mainNav"
+                   onclick="document.getElementById('mainNav').classList.toggle('is-active');this.classList.toggle('is-active');">
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                    <span aria-hidden="true"></span>
+                </a>
+            </div>
+            <div id="mainNav" class="navbar-menu">
+                <div class="navbar-start">
+                    <a class="navbar-item" href="/">Dashboard</a>
+                    @if (IsAdmin)
+                    {
+                        <a class="navbar-item" href="/admin/users">Benutzer</a>
+                        <a class="navbar-item" href="/admin/languages">Sprachen</a>
+                    }
+                </div>
+                <div class="navbar-end">
+                    <div class="navbar-item">
+                        <form method="post" action="/logout">
+                            <button type="submit" class="button is-light is-small">Abmelden</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    }
+    <section class="section">
+        @if (ShowNavbar)
+        {
+            @ChildContent
+        }
+        else
+        {
+            <div class="container">
+                <div class="columns is-centered">
+                    <div class="column is-4-desktop is-6-tablet">
+                        @ChildContent
+                    </div>
+                </div>
+            </div>
+        }
+    </section>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script>navigator.serviceWorker?.register('/service-worker.js');</script>
+</body>
+</html>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public bool ShowNavbar { get; set; } = true;
+    [Parameter] public bool IsAdmin { get; set; }
+}

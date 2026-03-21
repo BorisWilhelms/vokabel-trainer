@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Http.HttpResults;
+using VokabelTrainer.Api.Components.Pages;
 using VokabelTrainer.Api.Models;
+using VokabelTrainer.Api.Models.Lists;
 using VokabelTrainer.Api.Services;
 
 namespace VokabelTrainer.Api.Endpoints;
@@ -7,7 +10,68 @@ public static class TrainingEndpoints
 {
     public static WebApplication MapTrainingEndpoints(this WebApplication app)
     {
-        app.MapPost("/form/training/start", async (HttpContext ctx, TrainingService trainingService) =>
+        app.MapGet("/training/start", async (VocabularyListService listService, HttpContext ctx) =>
+        {
+            return new RazorComponentResult<TrainingStart>(new
+            {
+                ListId = (int?)null,
+                ListSummary = (VocabularyListSummaryDto?)null,
+                IsAdmin = ctx.User.IsInRole("Admin")
+            });
+        }).RequireAuthorization();
+
+        app.MapGet("/training/start/{listId:int}", async (int listId, VocabularyListService listService, HttpContext ctx) =>
+        {
+            var userId = ctx.GetUserId();
+            var allLists = await listService.GetAllForUserAsync(userId);
+            var listSummary = allLists.FirstOrDefault(l => l.Id == listId);
+
+            return new RazorComponentResult<TrainingStart>(new
+            {
+                ListId = (int?)listId,
+                ListSummary = listSummary,
+                IsAdmin = ctx.User.IsInRole("Admin")
+            });
+        }).RequireAuthorization();
+
+        app.MapGet("/training/{sessionId:int}", async (int sessionId, TrainingService trainingService, HttpContext ctx,
+            string? mode, string? fc, string? fa, string? fp, string? fg) =>
+        {
+            var question = await trainingService.GetNextQuestionAsync(sessionId);
+            if (question is null)
+            {
+                return Results.Redirect($"/training/result/{sessionId}");
+            }
+
+            bool? feedbackCorrect = fc is not null ? fc == "1" : null;
+            var isEndlos = string.Equals(mode, "Endlos", StringComparison.OrdinalIgnoreCase);
+
+            return new RazorComponentResult<Training>(new
+            {
+                SessionId = sessionId,
+                Question = question,
+                FeedbackCorrect = feedbackCorrect,
+                FeedbackAnswers = fa,
+                FeedbackPrompt = fp,
+                FeedbackGiven = fg,
+                Mode = mode,
+                IsEndlos = isEndlos,
+                IsAdmin = ctx.User.IsInRole("Admin")
+            });
+        }).RequireAuthorization();
+
+        app.MapGet("/training/result/{sessionId:int}", async (int sessionId, TrainingService trainingService, HttpContext ctx) =>
+        {
+            var result = await trainingService.GetSessionResultAsync(sessionId);
+
+            return new RazorComponentResult<SessionResult>(new
+            {
+                Result = result,
+                IsAdmin = ctx.User.IsInRole("Admin")
+            });
+        }).RequireAuthorization();
+
+        app.MapPost("/training/start", async (HttpContext ctx, TrainingService trainingService) =>
         {
             var userId = ctx.GetUserId();
             var form = await ctx.Request.ReadFormAsync();
@@ -25,7 +89,7 @@ public static class TrainingEndpoints
             return Results.Redirect($"/training/{sessionId}?mode={mode}");
         }).RequireAuthorization().DisableAntiforgery();
 
-        app.MapPost("/form/training/{sessionId:int}/submit", async (int sessionId, HttpContext ctx, TrainingService trainingService) =>
+        app.MapPost("/training/{sessionId:int}/submit", async (int sessionId, HttpContext ctx, TrainingService trainingService) =>
         {
             var form = await ctx.Request.ReadFormAsync();
             var action = form["Action"].FirstOrDefault();

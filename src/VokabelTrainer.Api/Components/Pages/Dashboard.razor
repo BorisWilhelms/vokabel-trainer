@@ -1,71 +1,56 @@
-@page "/"
-@attribute [Authorize]
-@inject VocabularyListService ListService
-@inject IHttpContextAccessor HttpContextAccessor
-
-<div class="level">
-    <div class="level-left">
-        <div class="level-item">
-            <h1 class="title">Meine Listen</h1>
-        </div>
-    </div>
-    <div class="level-right">
-        <div class="level-item">
-            <a href="/lists/new" class="button is-primary">+ Neue Liste</a>
-        </div>
-        <div class="level-item">
-            <a href="/training/start" class="button is-link">Alle trainieren</a>
-        </div>
-    </div>
-</div>
-
-@if (lists is null)
-{
-    <p>Laden...</p>
-}
-else if (lists.Count == 0)
-{
-    <div class="notification is-info">Noch keine Listen vorhanden</div>
-}
-else
-{
-    <div class="columns is-multiline">
-        @foreach (var list in lists)
-        {
-            <div class="column is-4-desktop is-6-tablet">
-                <div class="card">
-                    <div class="card-content">
-                        <p class="title is-5">@list.Name</p>
-                        <div class="is-flex is-align-items-center mb-2">
-                            <LanguageFlag FlagSvg="@list.SourceFlagSvg" />
-                            <span class="ml-1 mr-2">@list.SourceLanguageName</span>
-                            <span class="mr-2">&rarr;</span>
-                            <LanguageFlag FlagSvg="@list.TargetFlagSvg" />
-                            <span class="ml-1">@list.TargetLanguageName</span>
-                        </div>
-                        <p class="mb-2">@list.VocabularyCount Vokabeln</p>
-                        <BoxDistribution Distribution="@list.BoxDistribution" />
-                    </div>
-                    <footer class="card-footer">
-                        <a href="/training/start/@list.Id" class="card-footer-item">Trainieren</a>
-                        <a href="/lists/@list.Id/edit" class="card-footer-item">Bearbeiten</a>
-                        <a href="/progress/@list.Id" class="card-footer-item">Fortschritt</a>
-                    </footer>
-                </div>
+<PageLayout IsAdmin="@IsAdmin">
+    <div class="level">
+        <div class="level-left">
+            <div class="level-item">
+                <h1 class="title">Meine Listen</h1>
             </div>
-        }
+        </div>
+        <div class="level-right">
+            <div class="level-item">
+                <a href="/lists/new" class="button is-primary">+ Neue Liste</a>
+            </div>
+            <div class="level-item">
+                <a href="/training/start" class="button is-link">Alle trainieren</a>
+            </div>
+        </div>
     </div>
-}
+
+    @if (Lists.Count == 0)
+    {
+        <div class="notification is-info">Noch keine Listen vorhanden</div>
+    }
+    else
+    {
+        <div class="columns is-multiline">
+            @foreach (var list in Lists)
+            {
+                <div class="column is-4-desktop is-6-tablet">
+                    <div class="card">
+                        <div class="card-content">
+                            <p class="title is-5">@list.Name</p>
+                            <div class="is-flex is-align-items-center mb-2">
+                                <LanguageFlag FlagSvg="@list.SourceFlagSvg" />
+                                <span class="ml-1 mr-2">@list.SourceLanguageName</span>
+                                <span class="mr-2">&rarr;</span>
+                                <LanguageFlag FlagSvg="@list.TargetFlagSvg" />
+                                <span class="ml-1">@list.TargetLanguageName</span>
+                            </div>
+                            <p class="mb-2">@list.VocabularyCount Vokabeln</p>
+                            <BoxDistribution Distribution="@list.BoxDistribution" />
+                        </div>
+                        <footer class="card-footer">
+                            <a href="/training/start/@list.Id" class="card-footer-item">Trainieren</a>
+                            <a href="/lists/@list.Id/edit" class="card-footer-item">Bearbeiten</a>
+                            <a href="/progress/@list.Id" class="card-footer-item">Fortschritt</a>
+                        </footer>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</PageLayout>
 
 @code {
-    private List<VocabularyListSummaryDto>? lists;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var userId = GetUserId();
-        lists = await ListService.GetAllForUserAsync(userId);
-    }
-
-    private int GetUserId() =>
-        int.Parse(HttpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    [Parameter] public List<VocabularyListSummaryDto> Lists { get; set; } = [];
+    [Parameter] public bool IsAdmin { get; set; }
 }

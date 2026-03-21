@@ -1,116 +1,86 @@
-@page "/training/{SessionId:int}"
-@attribute [Authorize]
-@inject TrainingService TrainingService
-@inject NavigationManager Navigation
-
-@if (_feedbackCorrect.HasValue)
-{
-    <div class="notification @(_feedbackCorrect.Value ? "is-success" : "is-danger") mb-4">
-        @if (_feedbackCorrect.Value)
-        {
-            <p><strong>Richtig!</strong> @_feedbackPrompt</p>
-        }
-        else
-        {
-            <p><strong>Falsch!</strong> @_feedbackPrompt &rarr; <strong>@_feedbackAnswers</strong></p>
-            <p class="is-size-7">Deine Antwort: @_feedbackGiven</p>
-        }
-    </div>
-}
-
-@if (_question is not null)
-{
-    <progress class="progress is-primary mb-4" value="@(_question.CurrentIndex - 1)" max="@_question.TotalCount"></progress>
-    <p class="mb-2">Frage @_question.CurrentIndex von @_question.TotalCount</p>
-
-    <div class="is-flex is-align-items-center mb-3">
-        @if (_question.Direction == Direction.SourceToTarget)
-        {
-            <LanguageFlag FlagSvg="@_question.SourceFlagSvg" />
-            <span class="ml-1 mr-2">@_question.SourceLanguageName</span>
-            <span class="mr-2">&rarr;</span>
-            <LanguageFlag FlagSvg="@_question.TargetFlagSvg" />
-            <span class="ml-1">@_question.TargetLanguageName</span>
-        }
-        else
-        {
-            <LanguageFlag FlagSvg="@_question.TargetFlagSvg" />
-            <span class="ml-1 mr-2">@_question.TargetLanguageName</span>
-            <span class="mr-2">&rarr;</span>
-            <LanguageFlag FlagSvg="@_question.SourceFlagSvg" />
-            <span class="ml-1">@_question.SourceLanguageName</span>
-        }
-    </div>
-
-    <div class="prompt-card">
-        <p class="prompt-word">@_question.Prompt</p>
-    </div>
-
-    <form method="post" action="/form/training/@SessionId/submit">
-        <input type="hidden" name="VocabularyId" value="@_question.VocabularyId" />
-        <input type="hidden" name="QuestionDirection" value="@((int)_question.Direction)" />
-        <input type="hidden" name="PreviousPrompt" value="@_question.Prompt" />
-        <input type="hidden" name="Mode" value="@Mode" />
-
-        <div class="field">
-            <div class="control">
-                <input class="input is-medium" type="text" name="Answer" placeholder="Antwort" autofocus />
-            </div>
-        </div>
-        <div class="field is-grouped">
-            <div class="control">
-                <button type="submit" class="button is-primary">Pruefen</button>
-            </div>
-            @if (_isEndlos)
+<PageLayout IsAdmin="@IsAdmin">
+    @if (FeedbackCorrect.HasValue)
+    {
+        <div class="notification @(FeedbackCorrect.Value ? "is-success" : "is-danger") mb-4">
+            @if (FeedbackCorrect.Value)
             {
-                <div class="control">
-                    <button type="submit" name="Action" value="abort" class="button is-warning is-outlined">Abbrechen</button>
-                </div>
+                <p><strong>Richtig!</strong> @FeedbackPrompt</p>
+            }
+            else
+            {
+                <p><strong>Falsch!</strong> @FeedbackPrompt &rarr; <strong>@FeedbackAnswers</strong></p>
+                <p class="is-size-7">Deine Antwort: @FeedbackGiven</p>
             }
         </div>
-    </form>
-}
-else if (!_redirecting)
-{
-    <div class="notification is-warning">Keine Fragen verfuegbar.</div>
-    <a href="/" class="button">Zurueck</a>
-}
+    }
+
+    @if (Question is not null)
+    {
+        <progress class="progress is-primary mb-4" value="@(Question.CurrentIndex - 1)" max="@Question.TotalCount"></progress>
+        <p class="mb-2">Frage @Question.CurrentIndex von @Question.TotalCount</p>
+
+        <div class="is-flex is-align-items-center mb-3">
+            @if (Question.Direction == Direction.SourceToTarget)
+            {
+                <LanguageFlag FlagSvg="@Question.SourceFlagSvg" />
+                <span class="ml-1 mr-2">@Question.SourceLanguageName</span>
+                <span class="mr-2">&rarr;</span>
+                <LanguageFlag FlagSvg="@Question.TargetFlagSvg" />
+                <span class="ml-1">@Question.TargetLanguageName</span>
+            }
+            else
+            {
+                <LanguageFlag FlagSvg="@Question.TargetFlagSvg" />
+                <span class="ml-1 mr-2">@Question.TargetLanguageName</span>
+                <span class="mr-2">&rarr;</span>
+                <LanguageFlag FlagSvg="@Question.SourceFlagSvg" />
+                <span class="ml-1">@Question.SourceLanguageName</span>
+            }
+        </div>
+
+        <div class="prompt-card">
+            <p class="prompt-word">@Question.Prompt</p>
+        </div>
+
+        <form method="post" action="/training/@SessionId/submit">
+            <input type="hidden" name="VocabularyId" value="@Question.VocabularyId" />
+            <input type="hidden" name="QuestionDirection" value="@((int)Question.Direction)" />
+            <input type="hidden" name="PreviousPrompt" value="@Question.Prompt" />
+            <input type="hidden" name="Mode" value="@Mode" />
+
+            <div class="field">
+                <div class="control">
+                    <input class="input is-medium" type="text" name="Answer" placeholder="Antwort" autofocus />
+                </div>
+            </div>
+            <div class="field is-grouped">
+                <div class="control">
+                    <button type="submit" class="button is-primary">Pruefen</button>
+                </div>
+                @if (IsEndlos)
+                {
+                    <div class="control">
+                        <button type="submit" name="Action" value="abort" class="button is-warning is-outlined">Abbrechen</button>
+                    </div>
+                }
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="notification is-warning">Keine Fragen verfuegbar.</div>
+        <a href="/" class="button">Zurueck</a>
+    }
+</PageLayout>
 
 @code {
     [Parameter] public int SessionId { get; set; }
-
-    [SupplyParameterFromQuery(Name = "mode")] public string? Mode { get; set; }
-    [SupplyParameterFromQuery(Name = "fc")] public string? FeedbackCorrect { get; set; }
-    [SupplyParameterFromQuery(Name = "fa")] public string? FeedbackAnswers { get; set; }
-    [SupplyParameterFromQuery(Name = "fp")] public string? FeedbackPrompt { get; set; }
-    [SupplyParameterFromQuery(Name = "fg")] public string? FeedbackGiven { get; set; }
-
-    private TrainingQuestionDto? _question;
-    private bool? _feedbackCorrect;
-    private string? _feedbackAnswers;
-    private string? _feedbackPrompt;
-    private string? _feedbackGiven;
-    private bool _isEndlos;
-    private bool _redirecting;
-
-    protected override async Task OnInitializedAsync()
-    {
-        _isEndlos = string.Equals(Mode, "Endlos", StringComparison.OrdinalIgnoreCase);
-
-        // Parse feedback from query params (set by POST redirect)
-        if (FeedbackCorrect is not null)
-        {
-            _feedbackCorrect = FeedbackCorrect == "1";
-            _feedbackAnswers = FeedbackAnswers;
-            _feedbackPrompt = FeedbackPrompt;
-            _feedbackGiven = FeedbackGiven;
-        }
-
-        _question = await TrainingService.GetNextQuestionAsync(SessionId);
-        if (_question is null)
-        {
-            _redirecting = true;
-            Navigation.NavigateTo($"/training/result/{SessionId}", forceLoad: true);
-        }
-    }
+    [Parameter] public TrainingQuestionDto? Question { get; set; }
+    [Parameter] public bool? FeedbackCorrect { get; set; }
+    [Parameter] public string? FeedbackAnswers { get; set; }
+    [Parameter] public string? FeedbackPrompt { get; set; }
+    [Parameter] public string? FeedbackGiven { get; set; }
+    [Parameter] public string? Mode { get; set; }
+    [Parameter] public bool IsEndlos { get; set; }
+    [Parameter] public bool IsAdmin { get; set; }
 }

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using VokabelTrainer.Api.Components;
 using VokabelTrainer.Api.Data;
 using VokabelTrainer.Api.Endpoints;
 using VokabelTrainer.Api.Services;
@@ -61,12 +60,12 @@ using (var scope = app.Services.CreateScope())
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseAntiforgery();
 
 app.MapAuthEndpoints();
+app.MapDashboardEndpoints();
 app.MapListEndpoints();
 app.MapTrainingEndpoints();
+app.MapProgressEndpoints();
 app.MapAdminEndpoints();
 
-app.MapRazorComponents<App>();
 app.Run();

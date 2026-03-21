@@ -1,75 +1,65 @@
-@page "/training/result/{SessionId:int}"
-@attribute [Authorize]
-@inject TrainingService TrainingService
-@inject NavigationManager Navigation
-
-@if (result is not null)
-{
-    <h1 class="title">Ergebnis</h1>
-
-    <div class="has-text-centered mb-5">
-        <p class="score-display has-text-@GetColorClass()">
-            @result.SuccessRate%
-        </p>
-        <p class="is-size-4 mt-2">@result.CorrectAnswers von @result.TotalQuestions richtig</p>
-    </div>
-
-    @if (result.WrongAnswers.Count > 0)
+<PageLayout IsAdmin="@IsAdmin">
+    @if (Result is not null)
     {
-        <h2 class="title is-5">Falsche Antworten</h2>
-        <div class="table-container">
-            <table class="table is-fullwidth is-striped">
-                <thead>
-                    <tr>
-                        <th>Begriff</th>
-                        <th>Korrekte Antworten</th>
-                        <th>Deine Antwort</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var wrong in result.WrongAnswers)
-                    {
+        <h1 class="title">Ergebnis</h1>
+
+        <div class="has-text-centered mb-5">
+            <p class="score-display has-text-@GetColorClass()">
+                @Result.SuccessRate%
+            </p>
+            <p class="is-size-4 mt-2">@Result.CorrectAnswers von @Result.TotalQuestions richtig</p>
+        </div>
+
+        @if (Result.WrongAnswers.Count > 0)
+        {
+            <h2 class="title is-5">Falsche Antworten</h2>
+            <div class="table-container">
+                <table class="table is-fullwidth is-striped">
+                    <thead>
                         <tr>
-                            <td>@wrong.Term</td>
-                            <td>@string.Join(", ", wrong.CorrectTranslations)</td>
-                            <td class="has-text-danger">@wrong.GivenAnswer</td>
+                            <th>Begriff</th>
+                            <th>Korrekte Antworten</th>
+                            <th>Deine Antwort</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var wrong in Result.WrongAnswers)
+                        {
+                            <tr>
+                                <td>@wrong.Term</td>
+                                <td>@string.Join(", ", wrong.CorrectTranslations)</td>
+                                <td class="has-text-danger">@wrong.GivenAnswer</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div class="field is-grouped mt-5">
+            <div class="control">
+                <a href="/training/start" class="button is-primary">Nochmal trainieren</a>
+            </div>
+            <div class="control">
+                <a href="/" class="button is-light">Zurueck</a>
+            </div>
         </div>
     }
-
-    <div class="field is-grouped mt-5">
-        <div class="control">
-            <a href="/training/start" class="button is-primary">Nochmal trainieren</a>
-        </div>
-        <div class="control">
-            <a href="/" class="button is-light">Zurueck</a>
-        </div>
-    </div>
-}
-else
-{
-    <div class="notification is-warning">Ergebnis nicht gefunden.</div>
-    <a href="/" class="button is-light">Zurueck</a>
-}
+    else
+    {
+        <div class="notification is-warning">Ergebnis nicht gefunden.</div>
+        <a href="/" class="button is-light">Zurueck</a>
+    }
+</PageLayout>
 
 @code {
-    [Parameter]
-    public int SessionId { get; set; }
-
-    private SessionResultDto? result;
-
-    protected override async Task OnInitializedAsync()
-    {
-        result = await TrainingService.GetSessionResultAsync(SessionId);
-    }
+    [Parameter] public SessionResultDto? Result { get; set; }
+    [Parameter] public bool IsAdmin { get; set; }
 
     private string GetColorClass()
     {
-        if (result!.SuccessRate > 70) return "success";
-        if (result.SuccessRate > 40) return "warning";
+        if (Result!.SuccessRate > 70) return "success";
+        if (Result.SuccessRate > 40) return "warning";
         return "danger";
     }
 }

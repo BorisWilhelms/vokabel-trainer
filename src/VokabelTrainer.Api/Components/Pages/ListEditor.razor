@@ -1,178 +1,146 @@
-@page "/lists/new"
-@page "/lists/{Id:int}/edit"
-@attribute [Authorize]
-@inject VocabularyListService ListService
-@inject LanguageService LanguageService
-@inject IHttpContextAccessor HttpContextAccessor
-@inject NavigationManager Navigation
+<PageLayout IsAdmin="@IsAdmin">
+    <h1 class="title">@(Id.HasValue ? "Liste bearbeiten" : "Neue Liste")</h1>
 
-<h1 class="title">@(Id.HasValue ? "Liste bearbeiten" : "Neue Liste")</h1>
-
-<form method="post" action="@(Id.HasValue ? $"/form/lists/{Id}" : "/form/lists")">
-    <div class="field">
-        <label class="label" for="name-input">Name</label>
-        <div class="control">
-            <input id="name-input" class="input" type="text" name="Name" value="@name" />
-        </div>
-    </div>
-
-    <div class="field">
-        <label class="label">Ausgangssprache</label>
-        <div class="control">
-            <div class="select is-fullwidth">
-                <select name="SourceLanguageId">
-                    <option value="0">-- Sprache waehlen --</option>
-                    @if (languages is not null)
-                    {
-                        @foreach (var lang in languages)
-                        {
-                            <option value="@lang.Id" selected="@(lang.Id == sourceLanguageId)">@lang.DisplayName</option>
-                        }
-                    }
-                </select>
+    <form method="post" action="@(Id.HasValue ? $"/lists/{Id}" : "/lists")">
+        <div class="field">
+            <label class="label" for="name-input">Name</label>
+            <div class="control">
+                <input id="name-input" class="input" type="text" name="Name" value="@Name" />
             </div>
         </div>
-    </div>
 
-    <div class="field">
-        <label class="label">Zielsprache</label>
-        <div class="control">
-            <div class="select is-fullwidth">
-                <select name="TargetLanguageId">
-                    <option value="0">-- Sprache waehlen --</option>
-                    @if (languages is not null)
-                    {
-                        @foreach (var lang in languages)
+        <div class="field">
+            <label class="label">Ausgangssprache</label>
+            <div class="control">
+                <div class="select is-fullwidth">
+                    <select name="SourceLanguageId">
+                        <option value="0">-- Sprache waehlen --</option>
+                        @if (Languages is not null)
                         {
-                            <option value="@lang.Id" selected="@(lang.Id == targetLanguageId)">@lang.DisplayName</option>
+                            @foreach (var lang in Languages)
+                            {
+                                <option value="@lang.Id" selected="@(lang.Id == SourceLanguageId)">@lang.DisplayName</option>
+                            }
                         }
-                    }
-                </select>
+                    </select>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="field">
-        <label class="label">CSV importieren</label>
-        <div class="control">
-            <input type="file" accept=".csv" onchange="handleCsvImport(this)" />
+        <div class="field">
+            <label class="label">Zielsprache</label>
+            <div class="control">
+                <div class="select is-fullwidth">
+                    <select name="TargetLanguageId">
+                        <option value="0">-- Sprache waehlen --</option>
+                        @if (Languages is not null)
+                        {
+                            @foreach (var lang in Languages)
+                            {
+                                <option value="@lang.Id" selected="@(lang.Id == TargetLanguageId)">@lang.DisplayName</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="field">
-        <label class="label" for="vocabulary-textarea">Vokabeln</label>
-        <div class="control">
-            <textarea id="vocabulary-textarea" class="textarea" rows="10" name="RawVocabulary"
-                      placeholder="Eine Vokabel pro Zeile: Begriff = Uebersetzung1, Uebersetzung2">@rawVocabulary</textarea>
+        <div class="field">
+            <label class="label">CSV importieren</label>
+            <div class="control">
+                <input type="file" accept=".csv" onchange="handleCsvImport(this)" />
+            </div>
         </div>
-    </div>
 
-    <div class="field is-grouped">
-        <div class="control">
-            <button type="submit" class="button is-primary">Speichern</button>
+        <div class="field">
+            <label class="label" for="vocabulary-textarea">Vokabeln</label>
+            <div class="control">
+                <textarea id="vocabulary-textarea" class="textarea" rows="10" name="RawVocabulary"
+                          placeholder="Eine Vokabel pro Zeile: Begriff = Uebersetzung1, Uebersetzung2">@RawVocabulary</textarea>
+            </div>
         </div>
-        <div class="control">
-            <a href="/" class="button is-light">Abbrechen</a>
+
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">Speichern</button>
+            </div>
+            <div class="control">
+                <a href="/" class="button is-light">Abbrechen</a>
+            </div>
         </div>
-    </div>
-</form>
+    </form>
 
-<script>
-function handleCsvImport(input) {
-    var file = input.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function(e) {
-        var lines = e.target.result.split('\n');
-        var textarea = document.getElementById('vocabulary-textarea');
-        var nameInput = document.getElementById('name-input');
-        var startIndex = 0;
+    <script>
+    function handleCsvImport(input) {
+        var file = input.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var lines = e.target.result.split('\n');
+            var textarea = document.getElementById('vocabulary-textarea');
+            var nameInput = document.getElementById('name-input');
+            var startIndex = 0;
 
-        if (lines.length > 1 && !lines[0].includes('=')) {
-            if (!nameInput.value) {
-                nameInput.value = file.name.replace(/\.csv$/i, '');
-                nameInput.dispatchEvent(new Event('change'));
+            if (lines.length > 1 && !lines[0].includes('=')) {
+                if (!nameInput.value) {
+                    nameInput.value = file.name.replace(/\.csv$/i, '');
+                    nameInput.dispatchEvent(new Event('change'));
+                }
+                startIndex = 1;
             }
-            startIndex = 1;
-        }
 
-        var vocabLines = [];
-        for (var i = startIndex; i < lines.length; i++) {
-            var line = lines[i].trim();
-            if (!line) continue;
-            var parts = parseCsvLine(line);
-            if (parts.length >= 2) {
-                vocabLines.push(parts[0].trim() + ' = ' + parts[1].trim());
+            var vocabLines = [];
+            for (var i = startIndex; i < lines.length; i++) {
+                var line = lines[i].trim();
+                if (!line) continue;
+                var parts = parseCsvLine(line);
+                if (parts.length >= 2) {
+                    vocabLines.push(parts[0].trim() + ' = ' + parts[1].trim());
+                }
             }
-        }
 
-        if (vocabLines.length) {
-            textarea.value = textarea.value
-                ? textarea.value + '\n' + vocabLines.join('\n')
-                : vocabLines.join('\n');
-            textarea.dispatchEvent(new Event('change'));
-        }
-    };
-    reader.readAsText(file);
-}
-
-function parseCsvLine(line) {
-    var result = [];
-    var current = '';
-    var inQuotes = false;
-    for (var i = 0; i < line.length; i++) {
-        var c = line[i];
-        if (c === '"') {
-            if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
-                current += '"';
-                i++;
-            } else {
-                inQuotes = !inQuotes;
+            if (vocabLines.length) {
+                textarea.value = textarea.value
+                    ? textarea.value + '\n' + vocabLines.join('\n')
+                    : vocabLines.join('\n');
+                textarea.dispatchEvent(new Event('change'));
             }
-        } else if (c === ',' && !inQuotes) {
-            result.push(current);
-            current = '';
-        } else {
-            current += c;
-        }
+        };
+        reader.readAsText(file);
     }
-    result.push(current);
-    return result;
-}
-</script>
+
+    function parseCsvLine(line) {
+        var result = [];
+        var current = '';
+        var inQuotes = false;
+        for (var i = 0; i < line.length; i++) {
+            var c = line[i];
+            if (c === '"') {
+                if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+                    current += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (c === ',' && !inQuotes) {
+                result.push(current);
+                current = '';
+            } else {
+                current += c;
+            }
+        }
+        result.push(current);
+        return result;
+    }
+    </script>
+</PageLayout>
 
 @code {
-    [Parameter]
-    public int? Id { get; set; }
-
-    private List<LanguageDto>? languages;
-    private string name = "";
-    private int sourceLanguageId;
-    private int targetLanguageId;
-    private string rawVocabulary = "";
-
-    protected override async Task OnInitializedAsync()
-    {
-        languages = await LanguageService.GetAllAsync();
-
-        if (Id.HasValue)
-        {
-            var userId = GetUserId();
-            var list = await ListService.GetByIdAsync(Id.Value, userId);
-            if (list is null)
-            {
-                Navigation.NavigateTo("/");
-                return;
-            }
-
-            name = list.Name;
-            sourceLanguageId = list.SourceLanguageId;
-            targetLanguageId = list.TargetLanguageId;
-            rawVocabulary = string.Join("\n",
-                list.Entries.Select(e => $"{e.Term} = {string.Join(", ", e.Translations)}"));
-        }
-    }
-
-    private int GetUserId() =>
-        int.Parse(HttpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    [Parameter] public int? Id { get; set; }
+    [Parameter] public string Name { get; set; } = "";
+    [Parameter] public int SourceLanguageId { get; set; }
+    [Parameter] public int TargetLanguageId { get; set; }
+    [Parameter] public string RawVocabulary { get; set; } = "";
+    [Parameter] public List<LanguageDto>? Languages { get; set; }
+    [Parameter] public bool IsAdmin { get; set; }
 }
