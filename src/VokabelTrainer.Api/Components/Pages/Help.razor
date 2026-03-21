@@ -21,6 +21,7 @@
             <p>Für jede Vokabel wird zufällig die Richtung gewählt: entweder Ausgangssprache → Zielsprache oder umgekehrt. Tippe deine Antwort ein und drücke Enter.</p>
             <p>Nach jeder Antwort siehst du sofort ob sie richtig oder falsch war. Bei falschen Antworten wird die korrekte Übersetzung angezeigt — und wenn verfügbar ein Merkhilfe-Hinweis.</p>
             <p>Die <strong>Antwortzeit</strong> wird pro Frage gemessen. Antworten die länger als 60 Sekunden dauern werden als "abwesend" gewertet und fließen nicht in den Durchschnitt ein.</p>
+            <p>Du kannst ein Training jederzeit über den "Abbrechen"-Button beenden. Der bisherige Fortschritt wird gespeichert.</p>
         </div>
 
         <div class="box" id="leitner">
@@ -71,10 +72,10 @@
             <ul>
                 <li><strong>Manuell</strong> — Vokabeln im Format <code>Begriff = Übersetzung1, Übersetzung2</code> eingeben (eine pro Zeile)</li>
                 <li><strong>CSV-Import</strong> — Eine CSV-Datei hochladen (erste Spalte = Begriff, zweite Spalte = Übersetzung)</li>
-                <li><strong>Foto-Scan</strong> — Ein oder mehrere Fotos von Buchseiten hochladen (erfordert KI-Konfiguration)</li>
+                <li><strong>Foto-Scan</strong> — Ein oder mehrere Fotos von Buchseiten hochladen. Die KI erkennt den Text und erstellt die Vokabelliste automatisch.</li>
             </ul>
             <p>Als Trennzeichen zwischen Übersetzungen werden Komma, Semikolon und Pipe (|) akzeptiert. Alle sind gleichwertig.</p>
-            <p>Beim Training wird <strong>jede einzelne Übersetzung</strong> als korrekte Antwort akzeptiert. Der Vergleich ist nicht zwischen Groß- und Kleinschreibung empfindlich.</p>
+            <p>Beim Training wird <strong>jede einzelne Übersetzung</strong> als korrekte Antwort akzeptiert. Groß- und Kleinschreibung spielt dabei keine Rolle.</p>
         </div>
 
         <div class="box" id="progress">
@@ -82,53 +83,53 @@
             <p>Der Fortschritt zeigt dir:</p>
             <ul>
                 <li><strong>Box-Verteilung</strong> — Wie viele Vokabeln in welcher Box sind. Je mehr Vokabeln in hohen Boxen, desto besser kennst du sie.</li>
-                <li><strong>Trainingshistorie</strong> — Erfolgsquote pro Sitzung über Zeit.</li>
-                <li><strong>Problemvokabeln</strong> — Vokabeln die am häufigsten falsch beantwortet wurden, mit der aktuellen Box und ggf. einem Merkhilfe-Hinweis.</li>
+                <li><strong>Trainingshistorie</strong> — Erfolgsquote pro Sitzung über die Zeit.</li>
+                <li><strong>Problemvokabeln</strong> — Vokabeln die am häufigsten falsch beantwortet wurden, mit der aktuellen Box und — wenn vorhanden — einem Merkhilfe-Hinweis.</li>
                 <li><strong>Durchschnittliche Antwortzeit</strong> — Wie schnell du im Schnitt antwortest.</li>
             </ul>
-            <p>Du kannst den Fortschritt pro Liste oder global (über alle Listen) einsehen.</p>
+            <p>Du kannst den Fortschritt pro Liste oder über alle Listen hinweg einsehen (Menüpunkt "Fortschritt").</p>
         </div>
 
         <div class="box" id="ai">
             <h2 class="subtitle">KI-Funktionen</h2>
-            <p>Die App kann optional KI-Dienste nutzen (über <a href="https://openrouter.ai" target="_blank">OpenRouter</a>). Dafür muss ein API-Schlüssel konfiguriert sein.</p>
+            <p>Der Vokabel Trainer kann KI nutzen, um dich beim Lernen zu unterstützen. Diese Funktionen sind optional und nur verfügbar wenn sie vom Administrator aktiviert wurden.</p>
 
-            <h3>Foto-Scan (OCR)</h3>
-            <p>Beim Erstellen einer Liste kannst du Fotos von Buchseiten hochladen. Die KI erkennt den Text und extrahiert die Vokabeln automatisch im richtigen Format.</p>
+            <h3>Foto-Scan</h3>
+            <p>Beim Erstellen einer Liste kannst du Fotos von Buchseiten hochladen. Die KI erkennt den Text und erstellt die Vokabelliste automatisch — du musst die Vokabeln nicht abtippen.</p>
 
             <h3>Merkhilfen</h3>
-            <p>Wenn du eine Vokabel falsch beantwortest, generiert die KI eine Eselsbrücke. Diese basiert bevorzugt auf:</p>
+            <p>Wenn du eine Vokabel falsch beantwortest, erstellt die KI automatisch eine Eselsbrücke. Diese basiert bevorzugt auf:</p>
             <ul>
                 <li>Echten Wortverbindungen (z.B. "bellum" → "Rebellion")</li>
                 <li>Verwandten Wörtern im Englischen (z.B. "deus" → "deity")</li>
                 <li>Klangähnlichkeiten als Fallback</li>
             </ul>
-            <p>Merkhilfen werden <strong>einmalig generiert und gespeichert</strong>. Du kannst jederzeit einen neuen Hinweis anfordern ("neuer Hinweis"-Link).</p>
+            <p>Merkhilfen werden gespeichert und bei zukünftigen Fehlern wieder angezeigt. Wenn dir ein Hinweis nicht gefällt, kannst du über den "neuer Hinweis"-Link einen neuen generieren lassen.</p>
 
             <h3>Flaggen</h3>
-            <p>In der Sprachverwaltung können Flaggen-Icons per KI generiert werden.</p>
+            <p>Die kleinen Flaggen-Icons neben den Sprachnamen werden ebenfalls per KI erzeugt.</p>
         </div>
 
         <div class="box" id="data">
             <h2 class="subtitle">Daten &amp; Transparenz</h2>
-            <p>Alle Daten werden <strong>lokal in einer SQLite-Datenbank</strong> gespeichert. Es werden keine Daten an externe Server gesendet — mit folgender Ausnahme:</p>
+            <p>Wir legen Wert auf Transparenz. Hier erfährst du, welche Daten gespeichert werden und was mit ihnen passiert.</p>
 
             <h3>Was wird gespeichert?</h3>
             <ul>
-                <li><strong>Benutzer</strong> — Benutzername, Passwort-Hash (bcrypt), Rolle</li>
-                <li><strong>Vokabeln</strong> — Begriff, Übersetzungen, Merkhilfe-Hinweis</li>
-                <li><strong>Trainingsantworten</strong> — Gegebene Antwort, ob richtig/falsch, Antwortzeit, Zeitpunkt</li>
-                <li><strong>Leitner-Stand</strong> — Aktuelle Box und Sitzungszähler pro Vokabel</li>
+                <li><strong>Dein Benutzerkonto</strong> — Benutzername und ein verschlüsseltes Passwort (dein Passwort ist nicht im Klartext gespeichert)</li>
+                <li><strong>Deine Vokabeln</strong> — Begriffe, Übersetzungen und Merkhilfe-Hinweise</li>
+                <li><strong>Deine Trainingsantworten</strong> — Was du geantwortet hast, ob es richtig war, wie lange du gebraucht hast und wann</li>
+                <li><strong>Dein Lernfortschritt</strong> — In welcher Box jede Vokabel ist und wann sie wieder dran ist</li>
             </ul>
 
-            <h3>Was wird an KI-Dienste gesendet?</h3>
-            <p>Nur wenn KI-Funktionen aktiv genutzt werden:</p>
+            <h3>Was wird an externe Dienste gesendet?</h3>
+            <p>Wenn KI-Funktionen aktiviert sind, werden für bestimmte Aktionen Daten an einen KI-Dienst gesendet:</p>
             <ul>
-                <li><strong>Foto-Scan</strong> — Das hochgeladene Foto wird an OpenRouter gesendet</li>
-                <li><strong>Merkhilfen</strong> — Begriff und Übersetzung(en) der falsch beantworteten Vokabel</li>
-                <li><strong>Flaggen</strong> — Sprachname und Code</li>
+                <li><strong>Foto-Scan</strong> — Das hochgeladene Foto wird zur Texterkennung an den KI-Dienst gesendet</li>
+                <li><strong>Merkhilfen</strong> — Der Begriff und seine Übersetzung(en) werden gesendet, damit die KI eine Eselsbrücke erstellen kann</li>
+                <li><strong>Flaggen</strong> — Der Name der Sprache wird gesendet</li>
             </ul>
-            <p>Es werden <strong>keine persönlichen Daten</strong> (Benutzername, Passwort, Trainingshistorie) an KI-Dienste übermittelt.</p>
+            <p>Es werden <strong>keine persönlichen Daten</strong> wie dein Benutzername, dein Passwort oder deine Trainingshistorie an externe Dienste übermittelt. Die KI erfährt nicht, wer du bist oder wie gut du lernst.</p>
         </div>
     </div>
 </PageLayout>

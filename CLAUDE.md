@@ -180,3 +180,4 @@ Configured in `appsettings.json` (use env vars for secrets):
 - HTMX partials swap into `#content` div in PageLayout
 - Use `HX-Redirect` header for navigation from HTMX POST endpoints
 - **Keep the help page (`Components/Pages/Help.razor`) up to date** when adding or changing features. It is the user-facing documentation and must reflect the current behavior, algorithms, and data handling.
+- **Help page language**: The help page is written for end users (e.g. a 14-year-old student), not developers. Avoid technical jargon (no "API keys", "SQLite", "bcrypt", "endpoints"). Explain what happens, not how it's implemented. Use "du" form.
