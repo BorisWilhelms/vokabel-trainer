@@ -1,27 +1,41 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using VokabelTrainer.Api.Components;
 using VokabelTrainer.Api.Data;
 using VokabelTrainer.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddRazorComponents();
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/api/auth/unauthorized";
+        options.LoginPath = "/login";
         options.Events.OnRedirectToLogin = context =>
         {
-            context.Response.StatusCode = 401;
+            if (context.Request.Path.StartsWithSegments("/api"))
+            {
+                context.Response.StatusCode = 401;
+                return Task.CompletedTask;
+            }
+            context.Response.Redirect(context.RedirectUri);
             return Task.CompletedTask;
         };
         options.Events.OnRedirectToAccessDenied = context =>
         {
-            context.Response.StatusCode = 403;
+            if (context.Request.Path.StartsWithSegments("/api"))
+            {
+                context.Response.StatusCode = 403;
+                return Task.CompletedTask;
+            }
+            context.Response.Redirect(context.RedirectUri);
             return Task.CompletedTask;
         };
     });
@@ -49,5 +63,14 @@ using (var scope = app.Services.CreateScope())
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAntiforgery();
 app.MapControllers();
+
+app.MapPost("/logout", async (HttpContext context) =>
+{
+    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.Redirect("/login");
+});
+
+app.MapRazorComponents<App>();
 app.Run();
