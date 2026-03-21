@@ -23,9 +23,26 @@
             </div>
             <div class="field">
                 <label class="label">Flagge (SVG)</label>
+                @if (!string.IsNullOrEmpty(EditLanguage?.FlagSvg))
+                {
+                    <div class="mb-2">
+                        <span class="is-size-7 has-text-grey">Vorschau:</span>
+                        <LanguageFlag FlagSvg="@EditLanguage.FlagSvg" />
+                    </div>
+                }
                 <div class="control">
                     <textarea name="FormFlagSvg" class="textarea" rows="4" placeholder="SVG-Code der Flagge">@(EditLanguage?.FlagSvg)</textarea>
                 </div>
+                @if (EditLanguage is not null && AiEnabled)
+                {
+                    <div class="mt-2">
+                        <a href="javascript:void(0)" class="button is-small is-primary is-light"
+                           onclick="this.classList.add('is-loading'); this.closest('div').querySelector('form').submit();">
+                            Flagge mit AI generieren
+                        </a>
+                        <form method="post" action="/admin/languages/@EditLanguage.Id/generate-flag" style="display:none"></form>
+                    </div>
+                }
             </div>
             <div class="field is-grouped">
                 <div class="control">
@@ -64,9 +81,6 @@
                         <td>
                             <div class="buttons are-small">
                                 <a href="/admin/languages?edit=@lang.Id" class="button is-small is-info">Bearbeiten</a>
-                                <form method="post" action="/admin/languages/@lang.Id/generate-flag" style="display:inline">
-                                    <button type="submit" class="button is-small is-primary is-light">Flagge generieren</button>
-                                </form>
                                 <form method="post" action="/admin/languages/@lang.Id/delete" style="display:inline">
                                     <button type="submit" class="button is-small is-danger" onclick="return confirm('Sprache wirklich loeschen?')">Loeschen</button>
                                 </form>
@@ -83,4 +97,5 @@
     [Parameter] public List<LanguageDto>? Languages { get; set; }
     [Parameter] public LanguageDto? EditLanguage { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public bool AiEnabled { get; set; }
 }

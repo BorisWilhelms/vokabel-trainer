@@ -20,7 +20,7 @@ public static class AdminEndpoints
             });
         }).RequireAuthorization("AdminOnly");
 
-        app.MapGet("/admin/languages", async (LanguageService languageService, string? edit, string? error) =>
+        app.MapGet("/admin/languages", async (LanguageService languageService, AiService aiService, string? edit, string? error) =>
         {
             var languages = await languageService.GetAllAsync();
 
@@ -41,7 +41,8 @@ public static class AdminEndpoints
             {
                 Languages = languages,
                 EditLanguage = editLanguage,
-                ErrorMessage = errorMessage
+                ErrorMessage = errorMessage,
+                AiEnabled = aiService.IsConfigured
             });
         }).RequireAuthorization("AdminOnly");
 
