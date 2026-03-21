@@ -48,7 +48,7 @@ public class LeitnerServiceTests
     public async Task EnsureBoxEntries_CreatesForNewVocabulary()
     {
         using var db = TestDbContextFactory.Create();
-        var user = new User { Username = "test", Role = Shared.Models.UserRole.User };
+        var user = new User { Username = "test", Role = Api.Models.UserRole.User };
         var lang = new Language { Code = "la", DisplayName = "Latein" };
         var lang2 = new Language { Code = "de", DisplayName = "Deutsch" };
         db.Users.Add(user);
@@ -81,7 +81,7 @@ public class LeitnerServiceTests
     public async Task DecrementSessionCounters_ReducesAll()
     {
         using var db = TestDbContextFactory.Create();
-        var user = new User { Username = "test", Role = Shared.Models.UserRole.User };
+        var user = new User { Username = "test", Role = Api.Models.UserRole.User };
         var lang = new Language { Code = "la", DisplayName = "Latein" };
         var lang2 = new Language { Code = "de", DisplayName = "Deutsch" };
         db.Users.Add(user);

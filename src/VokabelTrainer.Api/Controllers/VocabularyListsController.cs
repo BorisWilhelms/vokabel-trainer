@@ -3,7 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VokabelTrainer.Api.Services;
-using VokabelTrainer.Shared.Dtos.Lists;
+using VokabelTrainer.Api.Models.Lists;
 
 [ApiController]
 [Route("api/[controller]")]

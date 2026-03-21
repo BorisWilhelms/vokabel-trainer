@@ -2,7 +2,7 @@ namespace VokabelTrainer.Api.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VokabelTrainer.Api.Services;
-using VokabelTrainer.Shared.Dtos.Users;
+using VokabelTrainer.Api.Models.Users;
 
 [ApiController]
 [Route("api/[controller]")]

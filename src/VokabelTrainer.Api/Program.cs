@@ -46,10 +46,8 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapFallbackToFile("index.html");
 app.Run();

@@ -3,8 +3,8 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using VokabelTrainer.Api.Data;
 using VokabelTrainer.Api.Data.Entities;
-using VokabelTrainer.Shared.Dtos.Training;
-using VokabelTrainer.Shared.Models;
+using VokabelTrainer.Api.Models.Training;
+using VokabelTrainer.Api.Models;
 
 public class TrainingService(AppDbContext db, LeitnerService leitner)
 {

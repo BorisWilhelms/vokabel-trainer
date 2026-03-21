@@ -3,8 +3,8 @@ namespace VokabelTrainer.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using VokabelTrainer.Api.Data;
 using VokabelTrainer.Api.Data.Entities;
-using VokabelTrainer.Shared.Dtos.Users;
-using VokabelTrainer.Shared.Models;
+using VokabelTrainer.Api.Models.Users;
+using VokabelTrainer.Api.Models;
 
 public class UserService(AppDbContext db)
 {

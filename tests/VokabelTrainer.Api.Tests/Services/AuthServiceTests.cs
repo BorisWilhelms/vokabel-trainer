@@ -3,7 +3,7 @@ using FluentAssertions;
 using VokabelTrainer.Api.Data.Entities;
 using VokabelTrainer.Api.Services;
 using VokabelTrainer.Api.Tests.Helpers;
-using VokabelTrainer.Shared.Models;
+using VokabelTrainer.Api.Models;
 
 public class AuthServiceTests
 {

@@ -4,7 +4,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using VokabelTrainer.Api.Data;
 using VokabelTrainer.Api.Data.Entities;
-using VokabelTrainer.Shared.Dtos.Lists;
+using VokabelTrainer.Api.Models.Lists;
 
 public class VocabularyListService(AppDbContext db)
 {

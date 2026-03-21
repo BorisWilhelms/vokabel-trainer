@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VokabelTrainer.Api.Services;
-using VokabelTrainer.Shared.Dtos.Auth;
+using VokabelTrainer.Api.Models.Auth;
 
 [ApiController]
 [Route("api/[controller]")]

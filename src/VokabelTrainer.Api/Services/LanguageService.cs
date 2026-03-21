@@ -3,7 +3,7 @@ namespace VokabelTrainer.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using VokabelTrainer.Api.Data;
 using VokabelTrainer.Api.Data.Entities;
-using VokabelTrainer.Shared.Dtos.Languages;
+using VokabelTrainer.Api.Models.Languages;
 
 public class LanguageService(AppDbContext db)
 {

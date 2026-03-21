@@ -2,8 +2,8 @@ namespace VokabelTrainer.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using VokabelTrainer.Api.Data;
 using VokabelTrainer.Api.Data.Entities;
-using VokabelTrainer.Shared.Dtos.Auth;
-using VokabelTrainer.Shared.Models;
+using VokabelTrainer.Api.Models.Auth;
+using VokabelTrainer.Api.Models;
 
 public class AuthService(AppDbContext db)
 {

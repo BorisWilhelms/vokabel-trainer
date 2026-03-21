@@ -2,8 +2,8 @@
 namespace VokabelTrainer.Api.Services;
 using Microsoft.EntityFrameworkCore;
 using VokabelTrainer.Api.Data;
-using VokabelTrainer.Shared.Dtos.Lists;
-using VokabelTrainer.Shared.Dtos.Progress;
+using VokabelTrainer.Api.Models.Lists;
+using VokabelTrainer.Api.Models.Progress;
 
 public class ProgressService(AppDbContext db)
 {

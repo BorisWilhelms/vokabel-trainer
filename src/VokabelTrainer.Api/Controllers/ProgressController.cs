@@ -3,7 +3,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using VokabelTrainer.Api.Services;
-using VokabelTrainer.Shared.Dtos.Progress;
+using VokabelTrainer.Api.Models.Progress;
 
 [ApiController]
 [Route("api/[controller]")]

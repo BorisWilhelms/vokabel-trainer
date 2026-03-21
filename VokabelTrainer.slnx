@@ -1,8 +1,6 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/VokabelTrainer.Api/VokabelTrainer.Api.csproj" />
-    <Project Path="src/VokabelTrainer.Client/VokabelTrainer.Client.csproj" />
-    <Project Path="src/VokabelTrainer.Shared/VokabelTrainer.Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/VokabelTrainer.Api.Tests/VokabelTrainer.Api.Tests.csproj" />

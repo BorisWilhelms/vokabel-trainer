@@ -1,5 +1,5 @@
 namespace VokabelTrainer.Api.Data.Entities;
-using VokabelTrainer.Shared.Models;
+using VokabelTrainer.Api.Models;
 
 public class User
 {

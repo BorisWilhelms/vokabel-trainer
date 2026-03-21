@@ -5,8 +5,8 @@ using VokabelTrainer.Api.Data;
 using VokabelTrainer.Api.Data.Entities;
 using VokabelTrainer.Api.Services;
 using VokabelTrainer.Api.Tests.Helpers;
-using VokabelTrainer.Shared.Dtos.Training;
-using VokabelTrainer.Shared.Models;
+using VokabelTrainer.Api.Models.Training;
+using VokabelTrainer.Api.Models;
 
 public class TrainingServiceTests
 {
