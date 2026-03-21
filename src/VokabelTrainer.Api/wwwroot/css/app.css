@@ -17,6 +17,10 @@
 }
 
 /* === Base === */
+html, body {
+    min-height: 100vh;
+}
+
 body {
     font-family: 'DM Sans', -apple-system, sans-serif;
     background-color: var(--vt-bg);
