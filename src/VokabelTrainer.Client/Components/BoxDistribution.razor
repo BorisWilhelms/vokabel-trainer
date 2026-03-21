@@ -1,0 +1,34 @@
+@if (Distribution is not null)
+{
+    var total = Distribution.Box1 + Distribution.Box2 + Distribution.Box3 + Distribution.Box4 + Distribution.Box5;
+
+    if (total > 0)
+    {
+        <div style="display: flex; width: 100%; height: 12px; border-radius: 4px; overflow: hidden;">
+            @if (Distribution.Box1 > 0)
+            {
+                <div style="background-color: red; flex: @Distribution.Box1;" title="Box 1: @Distribution.Box1"></div>
+            }
+            @if (Distribution.Box2 > 0)
+            {
+                <div style="background-color: orange; flex: @Distribution.Box2;" title="Box 2: @Distribution.Box2"></div>
+            }
+            @if (Distribution.Box3 > 0)
+            {
+                <div style="background-color: yellow; flex: @Distribution.Box3;" title="Box 3: @Distribution.Box3"></div>
+            }
+            @if (Distribution.Box4 > 0)
+            {
+                <div style="background-color: lightgreen; flex: @Distribution.Box4;" title="Box 4: @Distribution.Box4"></div>
+            }
+            @if (Distribution.Box5 > 0)
+            {
+                <div style="background-color: green; flex: @Distribution.Box5;" title="Box 5: @Distribution.Box5"></div>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter] public BoxDistributionDto? Distribution { get; set; }
+}
