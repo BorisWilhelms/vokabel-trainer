@@ -70,7 +70,13 @@
                         @foreach (var vocab in ProgressData.ProblemVocabulary)
                         {
                             <tr>
-                                <td>@vocab.Term</td>
+                                <td>
+                                    @vocab.Term
+                                    @if (vocab.Hint is not null)
+                                    {
+                                        <br/><small class="has-text-info">💡 @vocab.Hint</small>
+                                    }
+                                </td>
                                 <td>@vocab.TimesWrong</td>
                                 <td>@vocab.CurrentBox</td>
                             </tr>

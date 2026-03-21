@@ -54,7 +54,7 @@ public class ProgressService(AppDbContext db)
             var vocab = await db.Vocabularies.FindAsync(wc.VocabularyId);
             var box = boxEntries.FirstOrDefault(b => b.VocabularyId == wc.VocabularyId)?.Box ?? 1;
             if (vocab is not null)
-                problemVocab.Add(new ProblemVocabularyDto(vocab.Term, wc.Count, box));
+                problemVocab.Add(new ProblemVocabularyDto(vocab.Term, wc.Count, box, vocab.Hint));
         }
 
         return new ListProgressDto(listId, list.Name, boxDist, sessions.Count, sessions, problemVocab);
@@ -101,7 +101,7 @@ public class ProgressService(AppDbContext db)
             var vocab = await db.Vocabularies.FindAsync(wc.VocabularyId);
             var box = boxEntries.FirstOrDefault(b => b.VocabularyId == wc.VocabularyId)?.Box ?? 1;
             if (vocab is not null)
-                problemVocab.Add(new ProblemVocabularyDto(vocab.Term, wc.Count, box));
+                problemVocab.Add(new ProblemVocabularyDto(vocab.Term, wc.Count, box, vocab.Hint));
         }
 
         return new ListProgressDto(0, "Gesamtfortschritt", boxDist, sessions.Count, sessions, problemVocab);
