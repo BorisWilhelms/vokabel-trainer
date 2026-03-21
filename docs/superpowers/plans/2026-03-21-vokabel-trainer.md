@@ -6,7 +6,7 @@
 
 **Architecture:** ASP.NET Core Web API backend with EF Core + SQLite, Blazor WASM PWA frontend, shared DTO project. All business logic in API services, frontend is a pure API consumer.
 
-**Tech Stack:** .NET 10, ASP.NET Core, Blazor WASM, EF Core, SQLite, Chart.js (via JS interop), IStringLocalizer for localization.
+**Tech Stack:** .NET 10, ASP.NET Core, Blazor WASM, EF Core, SQLite, MudBlazor (UI-Komponentenbibliothek inkl. Charts), IStringLocalizer for localization.
 
 **Compiler Settings:** Gemeinsame Properties (TargetFramework, Nullable, TreatWarningsAsErrors) in `Directory.Build.props` im Solution-Root.
 
@@ -99,9 +99,7 @@ src/VokabelTrainer.Client/
   Routes.razor
   Layout/
     MainLayout.razor
-    MainLayout.razor.css
     NavBar.razor
-    NavBar.razor.css
   Services/
     ApiClient.cs
     AuthStateProvider.cs
@@ -191,6 +189,10 @@ dotnet add package Microsoft.EntityFrameworkCore.Design
 dotnet add package Microsoft.AspNetCore.Authentication.Cookies
 dotnet add package Microsoft.AspNetCore.Components.WebAssembly.Server
 dotnet add package BCrypt.Net-Next
+
+# Client project
+cd ../VokabelTrainer.Client
+dotnet add package MudBlazor
 
 # Test project
 cd ../../tests/VokabelTrainer.Api.Tests
@@ -2424,10 +2426,9 @@ git commit -m "feat: add API controllers and Program.cs configuration"
 - Create: `src/VokabelTrainer.Client/Services/ApiClient.cs`
 - Create: `src/VokabelTrainer.Client/Services/AuthStateProvider.cs`
 - Create: `src/VokabelTrainer.Client/Layout/MainLayout.razor`
-- Create: `src/VokabelTrainer.Client/Layout/MainLayout.razor.css`
 - Create: `src/VokabelTrainer.Client/Layout/NavBar.razor`
 - Create: `src/VokabelTrainer.Client/Components/LanguageFlag.razor`
-- Modify: `src/VokabelTrainer.Client/wwwroot/css/app.css`
+- Modify: `src/VokabelTrainer.Client/wwwroot/index.html`
 - Modify: `src/VokabelTrainer.Client/_Imports.razor`
 
 - [ ] **Step 1: Configure Program.cs with HttpClient and auth**
@@ -2437,6 +2438,7 @@ git commit -m "feat: add API controllers and Program.cs configuration"
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.AspNetCore.Components.Authorization;
+using MudBlazor.Services;
 using VokabelTrainer.Client;
 using VokabelTrainer.Client.Services;
 
@@ -2447,11 +2449,13 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp =>
     new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
+builder.Services.AddMudServices();
 builder.Services.AddScoped<ApiClient>();
 builder.Services.AddScoped<AuthStateProvider>();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp =>
     sp.GetRequiredService<AuthStateProvider>());
+builder.Services.AddLocalization();
 
 await builder.Build().RunAsync();
 ```
@@ -2614,9 +2618,77 @@ public class AuthStateProvider : AuthenticationStateProvider
 }
 ```
 
-- [ ] **Step 4: Create MainLayout and NavBar**
+- [ ] **Step 4: Add MudBlazor to index.html**
 
-Mobile-first layout with bottom navigation. Use CSS scoped styles. NavBar shows: Dashboard, Admin (if admin role). Logout button.
+In `wwwroot/index.html`, add MudBlazor CSS und JS im `<head>` bzw. vor `</body>`:
+
+```html
+<!-- im <head> -->
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+<link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+
+<!-- vor </body> -->
+<script src="_content/MudBlazor/MudBlazor.min.js"></script>
+```
+
+- [ ] **Step 5: Create MainLayout and NavBar**
+
+`MainLayout.razor` — MudBlazor Layout mit `MudLayout`, `MudAppBar`, `MudDrawer`, `MudMainContent`:
+
+```razor
+@inherits LayoutComponentBase
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit" Edge="Edge.Start"
+                       OnClick="@ToggleDrawer" />
+        <MudText Typo="Typo.h6">Vokabel Trainer</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Logout"
+                       Color="Color.Inherit" OnClick="@Logout" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
+        <NavBar />
+    </MudDrawer>
+    <MudMainContent Class="pa-4">
+        @Body
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen;
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    [Inject] private ApiClient Api { get; set; } = default!;
+    [Inject] private AuthStateProvider AuthState { get; set; } = default!;
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private async Task Logout()
+    {
+        await Api.LogoutAsync();
+        AuthState.SetUser(null);
+        Nav.NavigateTo("/login");
+    }
+}
+```
+
+`NavBar.razor` — MudBlazor Navigation:
+
+```razor
+<MudNavMenu>
+    <MudNavLink Href="/" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+    <AuthorizeView Roles="Admin">
+        <MudNavLink Href="/admin/users" Icon="@Icons.Material.Filled.People">Benutzer</MudNavLink>
+        <MudNavLink Href="/admin/languages" Icon="@Icons.Material.Filled.Language">Sprachen</MudNavLink>
+    </AuthorizeView>
+</MudNavMenu>
+```
 
 - [ ] **Step 5: Create LanguageFlag component**
 
@@ -2632,9 +2704,9 @@ Mobile-first layout with bottom navigation. Use CSS scoped styles. NavBar shows:
 }
 ```
 
-- [ ] **Step 6: Set up app.css with mobile-first base styles**
+- [ ] **Step 6: Minimales app.css fuer Overrides**
 
-Responsive layout, touch-friendly targets (min 44px), system font stack, CSS variables for theming.
+MudBlazor liefert das gesamte Styling. `app.css` nur fuer projektspezifische Overrides (z.B. Box-Verteilungs-Farben, LanguageFlag-Sizing). Kein eigenes Layout/Spacing/Typography noetig.
 
 - [ ] **Step 7: Set up _Imports.razor, App.razor, Routes.razor**
 
@@ -2648,6 +2720,7 @@ Responsive layout, touch-friendly targets (min 44px), system font stack, CSS var
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components.WebAssembly.Http
 @using Microsoft.Extensions.Localization
+@using MudBlazor
 @using VokabelTrainer.Client
 @using VokabelTrainer.Client.Layout
 @using VokabelTrainer.Client.Services
@@ -2723,14 +2796,14 @@ git commit -m "feat: set up Blazor client with layout, ApiClient, auth state, an
 
 - [ ] **Step 1: Implement Login.razor**
 
-Page at route `/login`. Two states:
+Page at route `/login`. Use `MudCard`, `MudTextField`, `MudButton`. Two states:
 1. **Initial setup** (no users in DB) — shows "Admin erstellen" header, username + password + confirmation fields
 2. **Normal login** — username + password fields
 3. **First login for whitelisted user** (uninitialized) — username + password (sets password)
 
 On load, call `ApiClient.NeedsSetupAsync()` to determine which mode.
 
-On submit, call `ApiClient.LoginAsync()`. On success, call `AuthStateProvider.SetUser()` and navigate to Dashboard.
+On submit, call `ApiClient.LoginAsync()`. On success, call `AuthStateProvider.SetUser()` and navigate to Dashboard. Fehler mit `MudAlert` anzeigen.
 
 - [ ] **Step 2: Verify build and manual test**
 
@@ -2758,17 +2831,16 @@ git commit -m "feat: add Login page with admin setup and password initialization
 
 - [ ] **Step 1: Implement BoxDistribution component**
 
-Renders the colored box distribution bar (Box 1-5 with proportional widths). Accepts `BoxDistributionDto` as parameter.
+Renders die farbige Box-Verteilung (Box 1-5 mit proportionalen Breiten). Accepts `BoxDistributionDto` as parameter. Kann einfach mit `<div>` und inline CSS oder mit `MudProgressLinear` Segmenten gebaut werden.
 
 - [ ] **Step 2: Implement Dashboard.razor**
 
 Page at route `/`. Requires auth. On load, fetch lists via `ApiClient.GetListsAsync()`.
 
-Renders:
-- Header with "Meine Listen" and "+ Neue Liste" button
-- "Alle trainieren" button
-- For each list: card with name, language flags, vocabulary count, box distribution bar, buttons (Trainieren, Bearbeiten, Fortschritt)
-- Admin users see "Admin" link
+MudBlazor-Komponenten:
+- `MudText` Header mit `MudButton` "+ Neue Liste" und "Alle trainieren"
+- Pro Liste: `MudCard` mit `MudCardContent` (Name, LanguageFlag, Vokabelanzahl, BoxDistribution), `MudCardActions` (MudButton: Trainieren, Bearbeiten, Fortschritt)
+- `AuthorizeView Roles="Admin"` fuer Admin-Link
 
 - [ ] **Step 3: Verify build**
 
@@ -2793,11 +2865,11 @@ git commit -m "feat: add Dashboard page with list overview and box distribution"
 
 - [ ] **Step 1: Implement UserManagement.razor**
 
-Page at route `/admin/users`. Requires admin role. Shows table of users with buttons: Reset Password, Delete. Form to create new user (username input).
+Page at route `/admin/users`. Requires admin role. `MudTable` mit Benutzern, `MudIconButton` fuer Reset Password und Delete. `MudTextField` + `MudButton` zum Anlegen neuer Benutzer. Loeschen/Reset mit `MudDialog` bestaetigen.
 
 - [ ] **Step 2: Implement LanguageManagement.razor**
 
-Page at route `/admin/languages`. Requires admin role. Shows table of languages (code, display name, flag preview). Form to create/edit language (code, display name, SVG textarea).
+Page at route `/admin/languages`. Requires admin role. `MudTable` mit Sprachen (Code, Anzeigename, Flag-Preview). `MudDialog` zum Erstellen/Bearbeiten (MudTextField fuer Code, Name; MudTextField Multiline fuer SVG).
 
 - [ ] **Step 3: Verify build**
 
@@ -2826,13 +2898,13 @@ Page at route `/lists/new` and `/lists/{id}/edit`. On load:
 - If editing, fetch list via `ApiClient.GetListAsync(id)` and populate form
 - For editing, reconstruct raw text from entries (`Term = Translation1, Translation2`)
 
-Form fields:
-- Name (text input)
-- Source language (dropdown)
-- Target language (dropdown)
-- Raw vocabulary (textarea, one per line: `Begriff = Uebersetzung1, Uebersetzung2`)
+MudBlazor-Komponenten:
+- `MudTextField` fuer Name
+- `MudSelect<int>` fuer Source/Target Language (mit LanguageFlag im Item-Template)
+- `MudTextField` Lines="10" fuer Raw Vocabulary (eine Vokabel pro Zeile: `Begriff = Uebersetzung1, Uebersetzung2`)
+- `MudButton` Speichern, `MudButton` Abbrechen
 
-On save: call Create or Update API.
+On save: call Create or Update API. Erfolg/Fehler mit `MudSnackbar` anzeigen.
 
 - [ ] **Step 2: Verify build**
 
@@ -2858,10 +2930,10 @@ git commit -m "feat: add vocabulary list editor page"
 
 - [ ] **Step 1: Implement TrainingStart.razor**
 
-Page at route `/training/start/{listId?}`. Shows:
-- Mode selection: Einmal durch / Endlos (radio buttons)
-- Optional: max vocabulary count input
-- Start button
+Page at route `/training/start/{listId?}`. MudBlazor-Komponenten:
+- `MudRadioGroup` fuer Moduswahl: Einmal durch / Endlos
+- `MudNumericField` optional fuer max Vokabelanzahl
+- `MudButton` Start
 
 On start: call `ApiClient.StartSessionAsync()`, navigate to `/training/{sessionId}`.
 
@@ -2869,23 +2941,24 @@ On start: call `ApiClient.StartSessionAsync()`, navigate to `/training/{sessionI
 
 Page at route `/training/{sessionId}`. Core training loop:
 - On load and after each answer: call `ApiClient.GetNextQuestionAsync(sessionId)`
-- Display: direction with flags, prompt word, progress (x/n)
-- Input field for answer (auto-focus, submit on Enter)
-- After submit: call `ApiClient.SubmitAnswerAsync()`, show feedback (correct/wrong with correct answers)
-- "Weiter" button to advance to next question
-- "Abbrechen" button (Endlos mode) to abort session
-- When `SessionComplete` is true in response, navigate to `/training/result/{sessionId}`
+- `MudCard` mit Richtungsanzeige (LanguageFlag Komponenten), `MudText` Typo.h4 fuer Prompt-Wort
+- `MudProgressLinear` fuer Fortschritt (x/n)
+- `MudTextField` fuer Antwort (AutoFocus, submit on Enter via `OnKeyDown`)
+- `MudButton` "Pruefen"
+- Nach Submit: `MudAlert` Severity.Success/Error mit Feedback, bei falsch die korrekten Antworten
+- `MudButton` "Weiter" fuer naechste Frage
+- `MudButton` "Abbrechen" (Endlos-Modus) ruft `AbortSessionAsync`
+- When `SessionComplete` is true, navigate to `/training/result/{sessionId}`
 
 - [ ] **Step 3: Implement SessionResult.razor**
 
 Page at route `/training/result/{sessionId}`. On load, call `ApiClient.GetSessionResultAsync()`.
 
-Display:
-- Big percentage number
-- x von y richtig
-- List of wrong answers with correct translations
-- "Nochmal trainieren" button (navigates back to TrainingStart with same listId)
-- "Zurueck" button (navigates to Dashboard)
+MudBlazor-Komponenten:
+- `MudText` Typo.h2 fuer Prozent-Anzeige, `MudText` fuer "x von y richtig"
+- `MudSimpleTable` fuer falsch beantwortete Vokabeln (Term, korrekte Antworten, gegebene Antwort)
+- `MudButton` "Nochmal trainieren" (navigiert zu TrainingStart mit gleicher listId)
+- `MudButton` "Zurueck" (navigiert zu Dashboard)
 
 - [ ] **Step 4: Verify build**
 
@@ -2907,59 +2980,25 @@ git commit -m "feat: add training flow pages (start, quiz, result)"
 **Files:**
 - Create: `src/VokabelTrainer.Client/Pages/Progress.razor`
 - Create: `src/VokabelTrainer.Client/Components/LeitnerExplanation.razor`
-- Create: `src/VokabelTrainer.Client/wwwroot/js/charts.js`
 
-- [ ] **Step 1: Add Chart.js dependency**
+- [ ] **Step 1: Charts mit MudBlazor**
 
-Add Chart.js CDN to `wwwroot/index.html` before the closing `</body>` tag:
-```html
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
-<script src="js/charts.js"></script>
+MudBlazor hat eingebaute Chart-Komponenten (`MudChart`). Kein Chart.js oder JS-Interop noetig.
+
+Box-Verteilung als `MudChart ChartType="ChartType.Bar"`:
+```razor
+<MudChart ChartType="ChartType.Bar"
+          ChartSeries="@_boxSeries"
+          XAxisLabels="@(new[] { "Box 1", "Box 2", "Box 3", "Box 4", "Box 5" })"
+          Width="100%" Height="200px" />
 ```
 
-Create `wwwroot/js/charts.js` with JS interop functions:
-
-```javascript
-// wwwroot/js/charts.js
-window.chartInterop = {
-    renderLineChart: function (canvasId, labels, data) {
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Erfolgsquote %',
-                    data: data,
-                    borderColor: '#6c9bff',
-                    tension: 0.3,
-                    fill: false
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: { y: { min: 0, max: 100 } }
-            }
-        });
-    },
-    renderBarChart: function (canvasId, values, colors) {
-        const ctx = document.getElementById(canvasId).getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Box 1', 'Box 2', 'Box 3', 'Box 4', 'Box 5'],
-                datasets: [{
-                    data: values,
-                    backgroundColor: colors
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } }
-            }
-        });
-    }
-};
+Erfolgsquote ueber Zeit als `MudChart ChartType="ChartType.Line"`:
+```razor
+<MudChart ChartType="ChartType.Line"
+          ChartSeries="@_successSeries"
+          XAxisLabels="@_sessionLabels"
+          Width="100%" Height="200px" />
 ```
 
 - [ ] **Step 2: Implement LeitnerExplanation component**
@@ -2970,15 +3009,13 @@ Static component explaining the Leitner box system with colored indicators. Same
 
 Page at route `/progress/{listId}`. On load, call `ApiClient.GetListProgressAsync(listId)`.
 
-Display:
-- List name with flag
-- LeitnerExplanation component
-- Box distribution bar chart (Chart.js via JS interop)
-- Success rate line chart over sessions (Chart.js via JS interop)
-- Total sessions count
-- Problem vocabulary table (term, times wrong, current box)
-
-Use `IJSRuntime.InvokeVoidAsync("chartInterop.renderBarChart", ...)` after render.
+MudBlazor-Komponenten:
+- `MudText` Listenname mit LanguageFlag
+- LeitnerExplanation Component
+- `MudChart` ChartType.Bar fuer Box-Verteilung (5 Boxen, farbig)
+- `MudChart` ChartType.Line fuer Erfolgsquote ueber Sessions
+- `MudText` Anzahl absolvierte Sessions
+- `MudSimpleTable` fuer Problemvokabeln (Term, x-mal falsch, aktuelle Box)
 
 - [ ] **Step 4: Verify build**
 
@@ -3027,9 +3064,9 @@ Create simple SVG-based icons at `wwwroot/icon-192.png` and `wwwroot/icon-512.pn
 
 No offline data caching (out of scope per spec). Just cache the WASM runtime and static assets for fast subsequent loads.
 
-- [ ] **Step 3: Final CSS polish**
+- [ ] **Step 4: Final polish**
 
-Ensure all touch targets are at least 44px, inputs are readable on mobile, consistent spacing and color scheme.
+MudBlazor liefert bereits mobile-friendly Touch Targets. Pruefen ob alle Seiten auf 360px Breite korrekt rendern. Ggf. `MudContainer MaxWidth="MaxWidth.Small"` auf Seiten die zu breit werden.
 
 - [ ] **Step 4: Add .superpowers/ to .gitignore**
 

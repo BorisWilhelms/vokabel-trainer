@@ -172,7 +172,7 @@ Nach jeder abgeschlossenen Session wird SessionsUntilReview fuer **alle** Vokabe
 - **Frontend:** Blazor WASM als PWA. Installierbar auf Mobilgeraeten. Mobile-first Design.
 - **Backend:** ASP.NET Core Web API
 - **Datenbank:** SQLite via EF Core
-- **Charts:** Leichtgewichtige JS-Chart-Library (z.B. Chart.js via JS-Interop)
+- **UI-Framework:** MudBlazor (Material Design Komponentenbibliothek, inkl. Charts)
 - **Sprach-Flaggen:** SVG-Icons pro Sprache, im Client hinterlegt
 - **Deployment:** Einzelne ASP.NET Core Anwendung die alles hostet
 - **Offline:** Explizit out of scope. PWA dient nur der Installierbarkeit, nicht der Offline-Nutzung.
