@@ -18,7 +18,7 @@ public static class AuthEndpoints
             string? errorMessage = error switch
             {
                 "credentials" => "Benutzername und Passwort sind erforderlich.",
-                "mismatch" => "Die Passwoerter stimmen nicht ueberein.",
+                "mismatch" => "Die Passwörter stimmen nicht überein.",
                 "invalid" => "Benutzername oder Passwort ist falsch.",
                 _ => null
             };

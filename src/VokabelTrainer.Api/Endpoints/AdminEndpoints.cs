@@ -33,7 +33,7 @@ public static class AdminEndpoints
             string? errorMessage = error switch
             {
                 "required" => "Code und Name sind erforderlich.",
-                "in-use" => "Sprache kann nicht geloescht werden, da sie noch verwendet wird.",
+                "in-use" => "Sprache kann nicht gelöscht werden, da sie noch verwendet wird.",
                 _ => null
             };
 

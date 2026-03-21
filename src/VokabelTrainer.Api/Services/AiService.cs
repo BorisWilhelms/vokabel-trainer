@@ -83,19 +83,19 @@ public class AiService(IConfiguration config, IHttpClientFactory httpClientFacto
     {
         var translationsStr = string.Join(", ", translations);
         var prompt = $"""
-            Finde eine Merkhilfe fuer diese Vokabel:
+            Finde eine Merkhilfe für diese Vokabel:
             {term} ({sourceLanguage}) = {translationsStr} ({targetLanguage})
 
             Regeln:
-            - Suche zuerst nach ECHTEN Verbindungen: verwandte Woerter im Deutschen oder Englischen, gemeinsame Wortwurzeln, Fremdwoerter die davon abstammen
+            - Suche zuerst nach ECHTEN Verbindungen: verwandte Wörter im Deutschen oder Englischen, gemeinsame Wortwurzeln, Fremdwörter die davon abstammen
             - Beispiel: "bellum = Krieg" → "Rebellion kommt von bellum"
             - Beispiel: "deus = Gott" → "Deity (engl.) kommt von deus"
             - Beispiel: "aqua = Wasser" → "Aquarium"
-            - Wenn keine echte Verbindung existiert, nutze eine klangliche Aehnlichkeit zu einem deutschen Wort
+            - Wenn keine echte Verbindung existiert, nutze eine klangliche Ähnlichkeit zu einem deutschen Wort
             - Maximal 1 kurzer Satz
             - NUR die Merkhilfe ausgeben, nichts anderes
-            - Keine kuenstlichen Hervorhebungen mit Sternchen oder Grossbuchstaben
-            - KEINE erfundenen Woerter
+            - Keine künstlichen Hervorhebungen mit Sternchen oder Großbuchstaben
+            - KEINE erfundenen Wörter
             """;
 
         var messages = new[]

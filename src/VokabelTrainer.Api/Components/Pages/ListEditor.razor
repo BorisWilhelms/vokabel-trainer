@@ -14,7 +14,7 @@
             <div class="control">
                 <div class="select is-fullwidth">
                     <select name="SourceLanguageId">
-                        <option value="0">-- Sprache waehlen --</option>
+                        <option value="0">-- Sprache wählen --</option>
                         @if (Languages is not null)
                         {
                             @foreach (var lang in Languages)
@@ -32,7 +32,7 @@
             <div class="control">
                 <div class="select is-fullwidth">
                     <select name="TargetLanguageId">
-                        <option value="0">-- Sprache waehlen --</option>
+                        <option value="0">-- Sprache wählen --</option>
                         @if (Languages is not null)
                         {
                             @foreach (var lang in Languages)
@@ -67,7 +67,7 @@
             <label class="label" for="vocabulary-textarea">Vokabeln</label>
             <div class="control">
                 <textarea id="vocabulary-textarea" class="textarea" rows="10" name="RawVocabulary"
-                          placeholder="Eine Vokabel pro Zeile: Begriff = Uebersetzung1, Uebersetzung2">@RawVocabulary</textarea>
+                          placeholder="Eine Vokabel pro Zeile: Begriff = Übersetzung1, Übersetzung2">@RawVocabulary</textarea>
             </div>
         </div>
 
