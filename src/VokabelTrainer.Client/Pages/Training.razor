@@ -43,7 +43,8 @@
             <MudText Typo="Typo.h4">@_question.Prompt</MudText>
         </MudPaper>
 
-        <MudTextField @bind-Value="_answer"
+        <MudTextField @ref="_answerField"
+                      @bind-Value="_answer"
                       Label="Antwort"
                       Variant="Variant.Outlined"
                       AutoFocus="true"
@@ -79,6 +80,7 @@
     private SubmitAnswerResponse? _lastFeedback;
     private string? _lastTerm;
     private string _answer = string.Empty;
+    private MudTextField<string>? _answerField;
     private bool _submitting;
     private bool _isEndlos;
 
@@ -104,6 +106,10 @@
         _question = question;
         _answer = string.Empty;
         _loading = false;
+        StateHasChanged();
+        await Task.Yield();
+        if (_answerField is not null)
+            await _answerField.FocusAsync();
     }
 
     private async Task OnKeyDown(KeyboardEventArgs e)
