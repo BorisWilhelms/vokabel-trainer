@@ -35,13 +35,12 @@
                 </div>
                 @if (EditLanguage is not null && AiEnabled)
                 {
-                    <div class="mt-2">
-                        <a href="javascript:void(0)" class="button is-small is-primary is-light"
-                           onclick="this.classList.add('is-loading'); this.closest('div').querySelector('form').submit();">
+                    <form method="post" action="/admin/languages/@EditLanguage.Id/generate-flag" class="mt-2">
+                        <button type="submit" class="button is-small is-primary is-light"
+                                onclick="this.classList.add('is-loading')">
                             Flagge mit AI generieren
-                        </a>
-                        <form method="post" action="/admin/languages/@EditLanguage.Id/generate-flag" style="display:none"></form>
-                    </div>
+                        </button>
+                    </form>
                 }
             </div>
             <div class="field is-grouped">
