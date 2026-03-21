@@ -101,4 +101,12 @@ app.MapTrainingEndpoints();
 app.MapProgressEndpoints();
 app.MapAdminEndpoints();
 
+app.MapGet("/help", (HttpContext ctx) =>
+{
+    return new Microsoft.AspNetCore.Http.HttpResults.RazorComponentResult<VokabelTrainer.Api.Components.Pages.Help>(new
+    {
+        IsAdmin = ctx.User.Identity?.IsAuthenticated == true && ctx.User.IsInRole("Admin")
+    });
+});
+
 app.Run();
