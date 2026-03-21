@@ -1,0 +1,216 @@
+@page "/lists/new"
+@page "/lists/{Id:int}/edit"
+@attribute [Authorize]
+@inject VocabularyListService ListService
+@inject LanguageService LanguageService
+@inject IHttpContextAccessor HttpContextAccessor
+@inject NavigationManager Navigation
+
+<h1 class="title">@(Id.HasValue ? "Liste bearbeiten" : "Neue Liste")</h1>
+
+<EditForm Model="Model!" method="post" OnValidSubmit="OnSubmit" FormName="list-editor">
+    <div class="field">
+        <label class="label" for="name-input">Name</label>
+        <div class="control">
+            <InputText id="name-input" class="input" @bind-Value="Model!.Name" />
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Ausgangssprache</label>
+        <div class="control">
+            <div class="select is-fullwidth">
+                <InputSelect @bind-Value="Model!.SourceLanguageId">
+                    <option value="0">-- Sprache wählen --</option>
+                    @if (languages is not null)
+                    {
+                        @foreach (var lang in languages)
+                        {
+                            <option value="@lang.Id">@lang.DisplayName</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">Zielsprache</label>
+        <div class="control">
+            <div class="select is-fullwidth">
+                <InputSelect @bind-Value="Model!.TargetLanguageId">
+                    <option value="0">-- Sprache wählen --</option>
+                    @if (languages is not null)
+                    {
+                        @foreach (var lang in languages)
+                        {
+                            <option value="@lang.Id">@lang.DisplayName</option>
+                        }
+                    }
+                </InputSelect>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label">CSV importieren</label>
+        <div class="control">
+            <input type="file" accept=".csv" onchange="handleCsvImport(this)" />
+        </div>
+    </div>
+
+    <div class="field">
+        <label class="label" for="vocabulary-textarea">Vokabeln</label>
+        <div class="control">
+            <InputTextArea id="vocabulary-textarea" class="textarea" rows="10"
+                           placeholder="Eine Vokabel pro Zeile: Begriff = Uebersetzung1, Uebersetzung2"
+                           @bind-Value="Model!.RawVocabulary" />
+        </div>
+    </div>
+
+    <div class="field is-grouped">
+        <div class="control">
+            <button type="submit" class="button is-primary">Speichern</button>
+        </div>
+        <div class="control">
+            <a href="/" class="button is-light">Abbrechen</a>
+        </div>
+    </div>
+</EditForm>
+
+<script>
+function handleCsvImport(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var lines = e.target.result.split('\n');
+        var textarea = document.getElementById('vocabulary-textarea');
+        var nameInput = document.getElementById('name-input');
+        var startIndex = 0;
+
+        if (lines.length > 1 && !lines[0].includes('=')) {
+            if (!nameInput.value) {
+                nameInput.value = file.name.replace(/\.csv$/i, '');
+                nameInput.dispatchEvent(new Event('change'));
+            }
+            startIndex = 1;
+        }
+
+        var vocabLines = [];
+        for (var i = startIndex; i < lines.length; i++) {
+            var line = lines[i].trim();
+            if (!line) continue;
+            var parts = parseCsvLine(line);
+            if (parts.length >= 2) {
+                vocabLines.push(parts[0].trim() + ' = ' + parts[1].trim());
+            }
+        }
+
+        if (vocabLines.length) {
+            textarea.value = textarea.value
+                ? textarea.value + '\n' + vocabLines.join('\n')
+                : vocabLines.join('\n');
+            textarea.dispatchEvent(new Event('change'));
+        }
+    };
+    reader.readAsText(file);
+}
+
+function parseCsvLine(line) {
+    var result = [];
+    var current = '';
+    var inQuotes = false;
+    for (var i = 0; i < line.length; i++) {
+        var c = line[i];
+        if (c === '"') {
+            if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
+                current += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+        } else if (c === ',' && !inQuotes) {
+            result.push(current);
+            current = '';
+        } else {
+            current += c;
+        }
+    }
+    result.push(current);
+    return result;
+}
+</script>
+
+@code {
+    [Parameter]
+    public int? Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private ListModel? Model { get; set; }
+
+    private List<LanguageDto>? languages;
+
+    protected override async Task OnInitializedAsync()
+    {
+        languages = await LanguageService.GetAllAsync();
+
+        if (Model is not null)
+            return;
+
+        if (Id.HasValue)
+        {
+            var userId = GetUserId();
+            var list = await ListService.GetByIdAsync(Id.Value, userId);
+            if (list is null)
+            {
+                Navigation.NavigateTo("/");
+                return;
+            }
+
+            Model = new ListModel
+            {
+                Name = list.Name,
+                SourceLanguageId = list.SourceLanguageId,
+                TargetLanguageId = list.TargetLanguageId,
+                RawVocabulary = string.Join("\n",
+                    list.Entries.Select(e => $"{e.Term} = {string.Join(", ", e.Translations)}"))
+            };
+        }
+        else
+        {
+            Model = new();
+        }
+    }
+
+    private async Task OnSubmit()
+    {
+        var userId = GetUserId();
+
+        if (Id.HasValue)
+        {
+            var request = new UpdateVocabularyListRequest(
+                Model!.Name, Model.SourceLanguageId, Model.TargetLanguageId, Model.RawVocabulary);
+            await ListService.UpdateAsync(Id.Value, userId, request);
+        }
+        else
+        {
+            var request = new CreateVocabularyListRequest(
+                Model!.Name, Model.SourceLanguageId, Model.TargetLanguageId, Model.RawVocabulary);
+            await ListService.CreateAsync(userId, request);
+        }
+
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+
+    private int GetUserId() =>
+        int.Parse(HttpContextAccessor.HttpContext!.User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+    private class ListModel
+    {
+        public string Name { get; set; } = "";
+        public int SourceLanguageId { get; set; }
+        public int TargetLanguageId { get; set; }
+        public string RawVocabulary { get; set; } = "";
+    }
+}
