@@ -1,0 +1,105 @@
+@if (Feedback is not null)
+{
+    <div class="notification @(Feedback.IsCorrect ? "is-success" : "is-danger") mb-4">
+        @if (Feedback.IsCorrect)
+        {
+            <p><strong>Richtig!</strong> @Feedback.Prompt</p>
+        }
+        else
+        {
+            <p><strong>Falsch!</strong> @Feedback.Prompt &rarr; <strong>@Feedback.CorrectAnswers</strong></p>
+            <p class="is-size-7">Deine Antwort: @Feedback.GivenAnswer</p>
+            @if (Feedback.Hint is not null)
+            {
+                <p class="is-size-7 mt-1">
+                    💡 @Feedback.Hint
+                    <form hx-post="/training/@SessionId/regenerate-hint/@Feedback.VocabId" hx-target="#content" hx-swap="innerHTML" style="display:inline">
+                        <input type="hidden" name="Mode" value="@Mode" />
+                        <input type="hidden" name="FeedbackPrompt" value="@Feedback.Prompt" />
+                        <input type="hidden" name="FeedbackAnswers" value="@Feedback.CorrectAnswers" />
+                        <input type="hidden" name="FeedbackGiven" value="@Feedback.GivenAnswer" />
+                        <button type="submit" class="button is-ghost is-small p-0 ml-2" style="height:auto;text-decoration:underline;">
+                            neuer Hinweis
+                        </button>
+                    </form>
+                </p>
+            }
+        }
+    </div>
+}
+
+@if (Question is not null)
+{
+    <progress class="progress is-primary mb-4" value="@(Question.CurrentIndex - 1)" max="@Question.TotalCount"></progress>
+    <p class="mb-2">Frage @Question.CurrentIndex von @Question.TotalCount</p>
+
+    <div class="is-flex is-align-items-center mb-3">
+        @if (Question.Direction == Direction.SourceToTarget)
+        {
+            <LanguageFlag FlagSvg="@Question.SourceFlagSvg" />
+            <span class="ml-1 mr-2">@Question.SourceLanguageName</span>
+            <span class="mr-2">&rarr;</span>
+            <LanguageFlag FlagSvg="@Question.TargetFlagSvg" />
+            <span class="ml-1">@Question.TargetLanguageName</span>
+        }
+        else
+        {
+            <LanguageFlag FlagSvg="@Question.TargetFlagSvg" />
+            <span class="ml-1 mr-2">@Question.TargetLanguageName</span>
+            <span class="mr-2">&rarr;</span>
+            <LanguageFlag FlagSvg="@Question.SourceFlagSvg" />
+            <span class="ml-1">@Question.SourceLanguageName</span>
+        }
+    </div>
+
+    <div class="prompt-card">
+        <p class="prompt-word">@Question.Prompt</p>
+    </div>
+
+    <form hx-post="/training/@SessionId/submit" hx-target="#content" hx-swap="innerHTML" onsubmit="document.getElementById('response-seconds').value=((Date.now()-window._questionStart)/1000).toFixed(1)">
+        <input type="hidden" name="VocabularyId" value="@Question.VocabularyId" />
+        <input type="hidden" name="QuestionDirection" value="@((int)Question.Direction)" />
+        <input type="hidden" name="PreviousPrompt" value="@Question.Prompt" />
+        <input type="hidden" name="Mode" value="@Mode" />
+        <input type="hidden" name="ResponseSeconds" id="response-seconds" value="" />
+
+        <div class="field">
+            <div class="control">
+                <input class="input is-medium" type="text" name="Answer" placeholder="Antwort" autofocus />
+            </div>
+        </div>
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">Pruefen</button>
+            </div>
+            @if (IsEndlos)
+            {
+                <div class="control">
+                    <button type="button" class="button is-warning is-outlined"
+                            hx-post="/training/@SessionId/submit"
+                            hx-target="#content"
+                            hx-swap="innerHTML"
+                            hx-vals='{"Action":"abort","Mode":"@Mode"}'>
+                        Abbrechen
+                    </button>
+                </div>
+            }
+        </div>
+    </form>
+    <script>window._questionStart = Date.now();</script>
+}
+else
+{
+    <div class="notification is-warning">Keine Fragen verfuegbar.</div>
+    <a href="/" class="button">Zurueck</a>
+}
+
+@using VokabelTrainer.Api.Endpoints
+
+@code {
+    [Parameter] public int SessionId { get; set; }
+    [Parameter] public TrainingQuestionDto? Question { get; set; }
+    [Parameter] public AnswerFeedback? Feedback { get; set; }
+    [Parameter] public string? Mode { get; set; }
+    [Parameter] public bool IsEndlos { get; set; }
+}

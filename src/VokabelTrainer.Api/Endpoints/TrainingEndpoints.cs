@@ -106,7 +106,8 @@ public static class TrainingEndpoints
             if (string.Equals(action, "abort", StringComparison.OrdinalIgnoreCase))
             {
                 await trainingService.AbortSessionAsync(sessionId);
-                return Results.Redirect($"/training/result/{sessionId}");
+                ctx.Response.Headers["HX-Redirect"] = $"/training/result/{sessionId}";
+                return Results.Ok();
             }
 
             var answer = form["Answer"].FirstOrDefault() ?? "";
@@ -150,7 +151,8 @@ public static class TrainingEndpoints
 
             if (submitFeedback.SessionComplete)
             {
-                return Results.Redirect($"/training/result/{sessionId}");
+                ctx.Response.Headers["HX-Redirect"] = $"/training/result/{sessionId}";
+                return Results.Ok();
             }
 
             // Load next question and render directly
@@ -158,7 +160,8 @@ public static class TrainingEndpoints
             if (question is null)
             {
                 await trainingService.CompleteSessionIfNeededAsync(sessionId);
-                return Results.Redirect($"/training/result/{sessionId}");
+                ctx.Response.Headers["HX-Redirect"] = $"/training/result/{sessionId}";
+                return Results.Ok();
             }
 
             var isEndlos = string.Equals(mode, "Endlos", StringComparison.OrdinalIgnoreCase);
@@ -167,14 +170,13 @@ public static class TrainingEndpoints
                 string.Join(", ", submitFeedback.CorrectAnswers),
                 answer, hint, vocabId);
 
-            return new RazorComponentResult<Training>(new
+            return new RazorComponentResult<TrainingContent>(new
             {
                 SessionId = sessionId,
                 Question = question,
                 Feedback = (AnswerFeedback?)feedback,
                 Mode = mode,
                 IsEndlos = isEndlos,
-                IsAdmin = ctx.User.IsInRole("Admin")
             });
         }).RequireAuthorization().DisableAntiforgery();
 
@@ -206,7 +208,8 @@ public static class TrainingEndpoints
             var question = await trainingService.GetNextQuestionAsync(sessionId);
             if (question is null)
             {
-                return Results.Redirect($"/training/result/{sessionId}");
+                ctx.Response.Headers["HX-Redirect"] = $"/training/result/{sessionId}";
+                return Results.Ok();
             }
 
             var isEndlos = string.Equals(mode, "Endlos", StringComparison.OrdinalIgnoreCase);
@@ -219,14 +222,13 @@ public static class TrainingEndpoints
                 form["FeedbackGiven"].FirstOrDefault() ?? "",
                 hint, vocabId);
 
-            return new RazorComponentResult<Training>(new
+            return new RazorComponentResult<TrainingContent>(new
             {
                 SessionId = sessionId,
                 Question = question,
                 Feedback = (AnswerFeedback?)feedback,
                 Mode = mode,
                 IsEndlos = isEndlos,
-                IsAdmin = ctx.User.IsInRole("Admin")
             });
         }).RequireAuthorization().DisableAntiforgery();
 
