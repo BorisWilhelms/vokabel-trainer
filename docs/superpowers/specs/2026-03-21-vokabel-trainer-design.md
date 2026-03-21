@@ -167,3 +167,4 @@ Nach jeder abgeschlossenen Session wird SessionsUntilReview fuer **alle** Vokabe
 - **Sprach-Flaggen:** SVG-Icons pro Sprache, im Client hinterlegt
 - **Deployment:** Einzelne ASP.NET Core Anwendung die alles hostet
 - **Offline:** Explizit out of scope. PWA dient nur der Installierbarkeit, nicht der Offline-Nutzung.
+- **Lokalisierung:** Alle UI-Texte ueber `IStringLocalizer` / `.resx`-Dateien. Initiale Sprache: Deutsch. Weitere Sprachen spaeter durch Hinzufuegen von `.resx`-Dateien moeglich, ohne Code-Aenderungen.
