@@ -1,19 +1,14 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copy project files and restore
-COPY Directory.Build.props .
-COPY src/VokabelTrainer.Api/VokabelTrainer.Api.csproj src/VokabelTrainer.Api/
-RUN dotnet restore src/VokabelTrainer.Api/VokabelTrainer.Api.csproj
-
 # Copy everything and publish
+COPY Directory.Build.props .
 COPY src/ src/
 RUN dotnet publish src/VokabelTrainer.Api/VokabelTrainer.Api.csproj \
     -c Release \
-    -o /app \
-    --no-restore
+    -o /app
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview-alpine AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS runtime
 WORKDIR /app
 
 # SQLite native deps
@@ -25,7 +20,6 @@ ENV ASPNETCORE_ENVIRONMENT=Production
 
 COPY --from=build /app .
 
-# Data volume for SQLite DB
 VOLUME /app/data
 
 EXPOSE 8080
