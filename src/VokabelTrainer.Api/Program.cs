@@ -83,6 +83,11 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+                     | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
