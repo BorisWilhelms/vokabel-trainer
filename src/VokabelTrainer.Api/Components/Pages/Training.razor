@@ -1,20 +1,19 @@
 @page "/training/{SessionId:int}"
 @attribute [Authorize]
 @inject TrainingService TrainingService
-@inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager Navigation
 
-@if (_feedback is not null)
+@if (_feedbackCorrect.HasValue)
 {
-    <div class="notification @(_feedback.IsCorrect ? "is-success" : "is-danger") mb-4">
-        @if (_feedback.IsCorrect)
+    <div class="notification @(_feedbackCorrect.Value ? "is-success" : "is-danger") mb-4">
+        @if (_feedbackCorrect.Value)
         {
             <p><strong>Richtig!</strong> @_feedbackPrompt</p>
         }
         else
         {
-            <p><strong>Falsch!</strong> @_feedbackPrompt &rarr; <strong>@string.Join(", ", _feedback.CorrectAnswers)</strong></p>
-            <p class="is-size-7">Deine Antwort: @_submittedAnswer</p>
+            <p><strong>Falsch!</strong> @_feedbackPrompt &rarr; <strong>@_feedbackAnswers</strong></p>
+            <p class="is-size-7">Deine Antwort: @_feedbackGiven</p>
         }
     </div>
 }
@@ -47,11 +46,11 @@
         <p class="prompt-word">@_question.Prompt</p>
     </div>
 
-    <form method="post" action="/training/@SessionId?mode=@Mode">
-        <AntiforgeryToken />
+    <form method="post" action="/training/@SessionId/submit">
         <input type="hidden" name="VocabularyId" value="@_question.VocabularyId" />
         <input type="hidden" name="QuestionDirection" value="@((int)_question.Direction)" />
         <input type="hidden" name="PreviousPrompt" value="@_question.Prompt" />
+        <input type="hidden" name="Mode" value="@Mode" />
 
         <div class="field">
             <div class="control">
@@ -78,16 +77,19 @@ else if (!_redirecting)
 }
 
 @code {
-    [Parameter]
-    public int SessionId { get; set; }
+    [Parameter] public int SessionId { get; set; }
 
-    [SupplyParameterFromQuery(Name = "mode")]
-    public string? Mode { get; set; }
+    [SupplyParameterFromQuery(Name = "mode")] public string? Mode { get; set; }
+    [SupplyParameterFromQuery(Name = "fc")] public string? FeedbackCorrect { get; set; }
+    [SupplyParameterFromQuery(Name = "fa")] public string? FeedbackAnswers { get; set; }
+    [SupplyParameterFromQuery(Name = "fp")] public string? FeedbackPrompt { get; set; }
+    [SupplyParameterFromQuery(Name = "fg")] public string? FeedbackGiven { get; set; }
 
     private TrainingQuestionDto? _question;
-    private SubmitAnswerResponse? _feedback;
-    private string? _submittedAnswer;
+    private bool? _feedbackCorrect;
+    private string? _feedbackAnswers;
     private string? _feedbackPrompt;
+    private string? _feedbackGiven;
     private bool _isEndlos;
     private bool _redirecting;
 
@@ -95,40 +97,13 @@ else if (!_redirecting)
     {
         _isEndlos = string.Equals(Mode, "Endlos", StringComparison.OrdinalIgnoreCase);
 
-        var httpContext = HttpContextAccessor.HttpContext!;
-
-        if (httpContext.Request.Method == "POST" && httpContext.Request.HasFormContentType)
+        // Parse feedback from query params (set by POST redirect)
+        if (FeedbackCorrect is not null)
         {
-            var form = await httpContext.Request.ReadFormAsync();
-            var action = form["Action"].FirstOrDefault();
-
-            if (string.Equals(action, "abort", StringComparison.OrdinalIgnoreCase))
-            {
-                await TrainingService.AbortSessionAsync(SessionId);
-                _redirecting = true;
-                Navigation.NavigateTo($"/training/result/{SessionId}", forceLoad: true);
-                return;
-            }
-
-            var answer = form["Answer"].FirstOrDefault() ?? "";
-            var vocabIdStr = form["VocabularyId"].FirstOrDefault();
-            var directionStr = form["QuestionDirection"].FirstOrDefault();
-            var previousPrompt = form["PreviousPrompt"].FirstOrDefault();
-
-            if (int.TryParse(vocabIdStr, out var vocabId) && int.TryParse(directionStr, out var dirInt))
-            {
-                var direction = (Direction)dirInt;
-                _submittedAnswer = answer;
-                _feedbackPrompt = previousPrompt;
-                _feedback = await TrainingService.SubmitAnswerAsync(SessionId, vocabId, direction, answer);
-
-                if (_feedback.SessionComplete)
-                {
-                    _redirecting = true;
-                    Navigation.NavigateTo($"/training/result/{SessionId}", forceLoad: true);
-                    return;
-                }
-            }
+            _feedbackCorrect = FeedbackCorrect == "1";
+            _feedbackAnswers = FeedbackAnswers;
+            _feedbackPrompt = FeedbackPrompt;
+            _feedbackGiven = FeedbackGiven;
         }
 
         _question = await TrainingService.GetNextQuestionAsync(SessionId);

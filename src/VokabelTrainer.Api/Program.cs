@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using VokabelTrainer.Api.Components;
+using VokabelTrainer.Api.Models;
 using VokabelTrainer.Api.Data;
 using VokabelTrainer.Api.Services;
 
@@ -71,6 +72,44 @@ app.MapPost("/logout", async (HttpContext context) =>
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     return Results.Redirect("/login");
 });
+
+app.MapPost("/training/{sessionId:int}/submit", async (int sessionId, HttpContext context, TrainingService trainingService) =>
+{
+    var form = await context.Request.ReadFormAsync();
+    var action = form["Action"].FirstOrDefault();
+    var mode = form["Mode"].FirstOrDefault() ?? "";
+
+    if (string.Equals(action, "abort", StringComparison.OrdinalIgnoreCase))
+    {
+        await trainingService.AbortSessionAsync(sessionId);
+        return Results.Redirect($"/training/result/{sessionId}");
+    }
+
+    var answer = form["Answer"].FirstOrDefault() ?? "";
+    var vocabIdStr = form["VocabularyId"].FirstOrDefault();
+    var directionStr = form["QuestionDirection"].FirstOrDefault();
+
+    if (int.TryParse(vocabIdStr, out var vocabId) && int.TryParse(directionStr, out var dirInt))
+    {
+        var direction = (Direction)dirInt;
+        var feedback = await trainingService.SubmitAnswerAsync(sessionId, vocabId, direction, answer);
+
+        if (feedback.SessionComplete)
+        {
+            return Results.Redirect($"/training/result/{sessionId}");
+        }
+
+        var correct = feedback.IsCorrect ? "1" : "0";
+        var correctAnswers = Uri.EscapeDataString(string.Join(", ", feedback.CorrectAnswers));
+        var prompt = Uri.EscapeDataString(form["PreviousPrompt"].FirstOrDefault() ?? "");
+        var givenAnswer = Uri.EscapeDataString(answer);
+
+        return Results.Redirect(
+            $"/training/{sessionId}?mode={mode}&fc={correct}&fa={correctAnswers}&fp={prompt}&fg={givenAnswer}");
+    }
+
+    return Results.Redirect($"/training/{sessionId}?mode={mode}");
+}).DisableAntiforgery().RequireAuthorization();
 
 app.MapRazorComponents<App>();
 app.Run();
