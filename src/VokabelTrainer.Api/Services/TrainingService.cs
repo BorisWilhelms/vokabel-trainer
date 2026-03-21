@@ -147,7 +147,7 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
     }
 
     public async Task<SubmitAnswerResponse> SubmitAnswerAsync(
-        int sessionId, int vocabularyId, Direction direction, string answer)
+        int sessionId, int vocabularyId, Direction direction, string answer, double? responseSeconds = null)
     {
         var session = await db.TrainingSessions.FirstAsync(s => s.Id == sessionId);
         var vocab = await db.Vocabularies.FirstAsync(v => v.Id == vocabularyId);
@@ -171,6 +171,7 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
             Direction = direction,
             GivenAnswer = answer,
             IsCorrect = isCorrect,
+            ResponseSeconds = responseSeconds,
             AnsweredAt = DateTime.UtcNow
         };
         db.TrainingAnswers.Add(trainingAnswer);
@@ -268,7 +269,8 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
             {
                 var vocab = g.First().Vocabulary;
                 var translations = JsonSerializer.Deserialize<List<string>>(vocab.Translations)!;
-                return new WrongAnswerDto(vocab.Term, translations, g.Last().GivenAnswer);
+                var last = g.Last();
+                return new WrongAnswerDto(vocab.Term, translations, last.GivenAnswer, last.ResponseSeconds);
             })
             .ToList();
 
@@ -276,9 +278,16 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
             ? (double)session.CorrectAnswers / session.TotalQuestions * 100
             : 0;
 
+        // Average response time, excluding AFK answers (> 60s)
+        var validTimes = session.Answers
+            .Where(a => a.ResponseSeconds.HasValue && a.ResponseSeconds.Value <= 60)
+            .Select(a => a.ResponseSeconds!.Value)
+            .ToList();
+        var avgSeconds = validTimes.Count > 0 ? Math.Round(validTimes.Average(), 1) : (double?)null;
+
         return new SessionResultDto(
             session.Id, session.TotalQuestions, session.CorrectAnswers,
-            Math.Round(successRate, 1), wrongAnswers);
+            Math.Round(successRate, 1), avgSeconds, wrongAnswers);
     }
 
     public async Task<int?> GetSessionListIdAsync(int sessionId)

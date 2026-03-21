@@ -115,11 +115,13 @@ public static class TrainingEndpoints
             var answer = form["Answer"].FirstOrDefault() ?? "";
             var vocabIdStr = form["VocabularyId"].FirstOrDefault();
             var directionStr = form["QuestionDirection"].FirstOrDefault();
+            var responseSecondsStr = form["ResponseSeconds"].FirstOrDefault();
+            double? responseSeconds = double.TryParse(responseSecondsStr, System.Globalization.CultureInfo.InvariantCulture, out var rs) ? rs : null;
 
             if (int.TryParse(vocabIdStr, out var vocabId) && int.TryParse(directionStr, out var dirInt))
             {
                 var direction = (Direction)dirInt;
-                var feedback = await trainingService.SubmitAnswerAsync(sessionId, vocabId, direction, answer);
+                var feedback = await trainingService.SubmitAnswerAsync(sessionId, vocabId, direction, answer, responseSeconds);
 
                 if (feedback.SessionComplete)
                 {

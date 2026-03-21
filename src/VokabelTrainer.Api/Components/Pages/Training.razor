@@ -42,11 +42,12 @@
             <p class="prompt-word">@Question.Prompt</p>
         </div>
 
-        <form method="post" action="/training/@SessionId/submit">
+        <form method="post" action="/training/@SessionId/submit" onsubmit="document.getElementById('response-seconds').value=((Date.now()-window._questionStart)/1000).toFixed(1)">
             <input type="hidden" name="VocabularyId" value="@Question.VocabularyId" />
             <input type="hidden" name="QuestionDirection" value="@((int)Question.Direction)" />
             <input type="hidden" name="PreviousPrompt" value="@Question.Prompt" />
             <input type="hidden" name="Mode" value="@Mode" />
+            <input type="hidden" name="ResponseSeconds" id="response-seconds" value="" />
 
             <div class="field">
                 <div class="control">
@@ -65,6 +66,7 @@
                 }
             </div>
         </form>
+        <script>window._questionStart = Date.now();</script>
     }
     else
     {

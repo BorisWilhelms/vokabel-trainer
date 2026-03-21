@@ -11,5 +11,6 @@ public class TrainingAnswer
     public Direction Direction { get; set; }
     public required string GivenAnswer { get; set; }
     public bool IsCorrect { get; set; }
+    public double? ResponseSeconds { get; set; }
     public DateTime AnsweredAt { get; set; }
 }

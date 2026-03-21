@@ -8,6 +8,10 @@
                 @Result.SuccessRate%
             </p>
             <p class="is-size-4 mt-2">@Result.CorrectAnswers von @Result.TotalQuestions richtig</p>
+            @if (Result.AverageResponseSeconds.HasValue)
+            {
+                <p class="is-size-6 has-text-grey mt-1">⌀ @Result.AverageResponseSeconds.Value s pro Antwort</p>
+            }
         </div>
 
         @if (Result.WrongAnswers.Count > 0)
@@ -20,6 +24,7 @@
                             <th>Begriff</th>
                             <th>Korrekte Antworten</th>
                             <th>Deine Antwort</th>
+                            <th>Zeit</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -29,6 +34,7 @@
                                 <td>@wrong.Term</td>
                                 <td>@string.Join(", ", wrong.CorrectTranslations)</td>
                                 <td class="has-text-danger">@wrong.GivenAnswer</td>
+                                <td>@(wrong.ResponseSeconds.HasValue ? $"{wrong.ResponseSeconds.Value:0.0}s" : "—")</td>
                             </tr>
                         }
                     </tbody>
