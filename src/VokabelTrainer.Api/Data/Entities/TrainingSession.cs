@@ -9,6 +9,7 @@ public class TrainingSession
     public int? ListId { get; set; }
     public VocabularyList? List { get; set; }
     public TrainingMode Mode { get; set; }
+    public int? MaxVocabulary { get; set; }
     public DateTime StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
     public int TotalQuestions { get; set; }

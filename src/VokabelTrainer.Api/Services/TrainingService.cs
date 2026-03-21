@@ -32,6 +32,7 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
             UserId = userId,
             ListId = listId,
             Mode = mode,
+            MaxVocabulary = maxVocabulary,
             StartedAt = DateTime.UtcNow,
         };
         db.TrainingSessions.Add(session);
@@ -60,6 +61,15 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
                 .ToListAsync()
             : answeredVocabIds.Distinct().ToList();
 
+        // Check MaxVocabulary limit: if we've already asked enough distinct vocab, stop
+        // (In Endlos mode, re-asking wrong vocab doesn't count as "new")
+        var distinctAskedCount = answeredVocabIds.Distinct().Count();
+        if (session.MaxVocabulary.HasValue && distinctAskedCount >= session.MaxVocabulary.Value
+            && (session.Mode != TrainingMode.Endlos || correctlyAnsweredIds.Count >= session.MaxVocabulary.Value))
+        {
+            return null;
+        }
+
         // Get due vocabulary, excluding already completed
         var query = db.BoxEntries
             .Where(b => b.UserId == session.UserId && b.SessionsUntilReview <= 0);
@@ -82,6 +92,16 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
             .GroupBy(b => b.Box)
             .SelectMany(g => g.OrderBy(_ => Rng.Next()))
             .ToList();
+
+        // Limit to MaxVocabulary: only consider new vocab up to the limit
+        if (session.MaxVocabulary.HasValue)
+        {
+            var remaining = session.MaxVocabulary.Value - distinctAskedCount;
+            if (remaining > 0 && session.Mode != TrainingMode.Endlos)
+            {
+                dueEntries = dueEntries.Take(remaining).ToList();
+            }
+        }
 
         // In Endlos mode, also avoid recently wrong-answered vocab (delay re-asking)
         if (session.Mode == TrainingMode.Endlos && dueEntries.Count > 1)
@@ -192,13 +212,30 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
 
     private async Task<bool> HasRemainingQuestionsAsync(TrainingSession session)
     {
+        var allAnsweredIds = await db.TrainingAnswers
+            .Where(a => a.SessionId == session.Id)
+            .Select(a => a.VocabularyId).Distinct().ToListAsync();
+
         var correctlyAnsweredIds = session.Mode == TrainingMode.Endlos
             ? await db.TrainingAnswers
                 .Where(a => a.SessionId == session.Id && a.IsCorrect)
                 .Select(a => a.VocabularyId).Distinct().ToListAsync()
-            : await db.TrainingAnswers
-                .Where(a => a.SessionId == session.Id)
-                .Select(a => a.VocabularyId).Distinct().ToListAsync();
+            : allAnsweredIds;
+
+        // MaxVocabulary limit reached
+        if (session.MaxVocabulary.HasValue)
+        {
+            if (session.Mode == TrainingMode.Endlos)
+            {
+                if (correctlyAnsweredIds.Count >= session.MaxVocabulary.Value)
+                    return false;
+            }
+            else
+            {
+                if (allAnsweredIds.Count >= session.MaxVocabulary.Value)
+                    return false;
+            }
+        }
 
         var query = db.BoxEntries
             .Where(b => b.UserId == session.UserId && b.SessionsUntilReview <= 0);
