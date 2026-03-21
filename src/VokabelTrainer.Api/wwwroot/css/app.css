@@ -278,9 +278,9 @@ h1, h2, h3, .title, .subtitle {
 
 /* === Tags === */
 .tag.is-success { background-color: var(--vt-forest); color: #fff; }
-.tag.is-warning { background-color: var(--vt-warm-light); color: var(--vt-text); }
+.tag.is-warning { background-color: var(--vt-warm-light); color: #3a2a0a; }
 .tag.is-danger { background-color: var(--vt-warm); color: #fff; }
-.tag.is-info { background-color: #81b9c3; color: #fff; }
+.tag.is-info { background-color: #81b9c3; color: #1a2a3a; }
 .tag.is-primary { background-color: var(--vt-forest-light); color: #fff; }
 
 /* === Progress bar === */
