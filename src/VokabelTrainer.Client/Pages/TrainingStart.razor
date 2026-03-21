@@ -1,0 +1,59 @@
+@page "/training/start"
+@page "/training/start/{ListId:int}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+@inject ApiClient ApiClient
+@inject NavigationManager NavigationManager
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-4">
+    <MudText Typo="Typo.h5" Class="mb-4">Training starten</MudText>
+
+    <MudStack Spacing="4">
+        <MudRadioGroup @bind-Value="_mode">
+            <MudRadio Value="TrainingMode.SinglePass" Color="Color.Primary">Einmal durch</MudRadio>
+            <MudRadio Value="TrainingMode.Endlos" Color="Color.Primary">Endlos</MudRadio>
+        </MudRadioGroup>
+
+        <MudNumericField @bind-Value="_maxVocabulary"
+                         Label="Max. Anzahl Vokabeln (optional)"
+                         Min="1"
+                         Variant="Variant.Outlined" />
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="StartTraining"
+                   Disabled="_starting">
+            @if (_starting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+            }
+            Training starten
+        </MudButton>
+    </MudStack>
+</MudContainer>
+
+@code {
+    [Parameter] public int? ListId { get; set; }
+
+    private TrainingMode _mode = TrainingMode.SinglePass;
+    private int? _maxVocabulary;
+    private bool _starting;
+
+    private async Task StartTraining()
+    {
+        _starting = true;
+        try
+        {
+            var sessionId = await ApiClient.StartSessionAsync(
+                new StartSessionRequest(ListId, _mode, _maxVocabulary));
+            var uri = _mode == TrainingMode.Endlos
+                ? $"/training/{sessionId}?mode=endlos"
+                : $"/training/{sessionId}";
+            NavigationManager.NavigateTo(uri);
+        }
+        finally
+        {
+            _starting = false;
+        }
+    }
+}
