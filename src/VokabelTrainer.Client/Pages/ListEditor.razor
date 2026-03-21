@@ -105,11 +105,30 @@
             }
         }
 
+        // Pre-select first language if available
+        if (_sourceLanguageId == 0 && _languages.Count > 0)
+            _sourceLanguageId = _languages[0].Id;
+        if (_targetLanguageId == 0 && _languages.Count > 1)
+            _targetLanguageId = _languages[1].Id;
+        else if (_targetLanguageId == 0 && _languages.Count > 0)
+            _targetLanguageId = _languages[0].Id;
+
         _loading = false;
     }
 
     private async Task Save()
     {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            Snackbar.Add("Bitte einen Namen eingeben.", Severity.Warning);
+            return;
+        }
+        if (_sourceLanguageId == 0 || _targetLanguageId == 0)
+        {
+            Snackbar.Add("Bitte Quell- und Zielsprache waehlen.", Severity.Warning);
+            return;
+        }
+
         _saving = true;
         try
         {
