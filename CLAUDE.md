@@ -80,7 +80,7 @@ No `EditForm`, no `@formname`, no `[SupplyParameterFromForm]` anywhere.
 
 ```
 src/VokabelTrainer.Api/
-  Program.cs                    — DI, middleware, auto-migrate, language seed, forwarded headers
+  Program.cs                    — DI, middleware, auto-migrate, language seed, forwarded headers, Kestrel limits
   Endpoints/                    — Minimal API route handlers
     AuthEndpoints.cs            — Login, logout
     DashboardEndpoints.cs       — Dashboard (list overview)
@@ -107,7 +107,16 @@ src/VokabelTrainer.Api/
   Components/
     PageLayout.razor            — Full HTML document (head, navbar, body, HTMX, theme toggle)
     Pages/                      — Full page components (wrapped in PageLayout)
+      Dashboard.razor           — List overview (home page)
+      Login.razor               — Login / initial setup
+      ListEditor.razor          — Create/edit vocabulary lists
+      TrainingStart.razor       — Training configuration (mode, max vocab)
+      Training.razor            — Training page (full page, GET)
       TrainingContent.razor     — Training partial (used by HTMX POST endpoints)
+      SessionResult.razor       — Training result summary
+      Progress.razor            — Progress stats (per list + global)
+      Help.razor                — User-facing help page
+      Admin/                    — UserManagement.razor, LanguageManagement.razor
     Shared/                     — BoxDistribution, LanguageFlag, LeitnerExplanation
   wwwroot/
     css/app.css                 — Design system (light + dark theme, CSS variables)
@@ -153,15 +162,18 @@ The app auto-migrates the database and seeds default languages (Latein, Deutsch,
 - **Dark/Light theme**: Bulma v1 auto-detects OS preference. Toggle in navbar saves to localStorage.
 - **HTMX for training flow**: Answer submission and hint regeneration use HTMX partial swaps (no page reload). Other forms use standard POST+redirect.
 - **Forwarded headers**: Enabled for reverse proxy (Traefik) HTTPS support.
+- **Global NoTracking**: EF Core default is `QueryTrackingBehavior.NoTracking`. Write paths use explicit `.AsTracking()`.
+- **Workstation GC**: `ServerGarbageCollection=false` — optimized for low-memory hosting (<500MB).
+- **Request size limit**: Kestrel `MaxRequestBodySize` set to 5MB (protects OCR upload).
 
 ## AI Features (OpenRouter)
 
-Configured in `appsettings.json` (use env vars for secrets):
+Configured in `appsettings.json`. API key via `dotnet user-secrets` (dev) or env vars (prod):
 ```json
 "OpenRouter": {
     "ApiKey": "",
     "VisionModel": "google/gemini-2.5-flash",
-    "TextModel": "google/gemini-2.5-flash"
+    "TextModel": "google/gemini-3.1-flash-lite-preview"
 }
 ```
 
@@ -181,3 +193,4 @@ Configured in `appsettings.json` (use env vars for secrets):
 - Use `HX-Redirect` header for navigation from HTMX POST endpoints
 - **Keep the help page (`Components/Pages/Help.razor`) up to date** when adding or changing features. It is the user-facing documentation and must reflect the current behavior, algorithms, and data handling.
 - **Help page language**: The help page is written for end users (e.g. a 14-year-old student), not developers. Avoid technical jargon (no "API keys", "SQLite", "bcrypt", "endpoints"). Explain what happens, not how it's implemented. Use "du" form.
+- **EF Core queries**: Default is NoTracking. Use `.AsTracking()` on any query that loads entities for modification (update properties + SaveChanges). `Add`/`Remove` work without tracking. Read-only queries benefit from NoTracking automatically.
