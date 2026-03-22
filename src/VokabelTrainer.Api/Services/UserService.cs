@@ -23,7 +23,7 @@ public class UserService(AppDbContext db)
 
     public async Task<bool> ResetPasswordAsync(int id)
     {
-        var user = await db.Users.FindAsync(id);
+        var user = await db.Users.AsTracking().FirstOrDefaultAsync(u => u.Id == id);
         if (user is null) return false;
         user.PasswordHash = null;
         user.IsInitialized = false;

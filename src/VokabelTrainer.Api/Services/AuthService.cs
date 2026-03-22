@@ -33,7 +33,7 @@ public class AuthService(AppDbContext db)
             return new AuthResponse(admin.Id, admin.Username, admin.Role, false);
         }
 
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Username == username);
+        var user = await db.Users.AsTracking().FirstOrDefaultAsync(u => u.Username == username);
         if (user is null)
             return null;
 

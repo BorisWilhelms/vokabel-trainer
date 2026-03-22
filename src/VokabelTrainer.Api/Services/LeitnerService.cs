@@ -58,6 +58,7 @@ public class LeitnerService(AppDbContext db)
             .ToListAsync();
 
         var entries = await db.BoxEntries
+            .AsTracking()
             .Where(b => b.UserId == userId && vocabIds.Contains(b.VocabularyId))
             .ToListAsync();
 

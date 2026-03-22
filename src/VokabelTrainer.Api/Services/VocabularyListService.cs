@@ -12,36 +12,43 @@ public class VocabularyListService(AppDbContext db)
     {
         var lists = await db.VocabularyLists
             .Where(l => l.UserId == userId)
-            .Include(l => l.SourceLanguage)
-            .Include(l => l.TargetLanguage)
-            .Include(l => l.Vocabularies)
+            .Select(l => new
+            {
+                l.Id, l.Name,
+                l.SourceLanguageId,
+                SourceLanguageName = l.SourceLanguage.DisplayName,
+                SourceFlagSvg = l.SourceLanguage.FlagSvg,
+                l.TargetLanguageId,
+                TargetLanguageName = l.TargetLanguage.DisplayName,
+                TargetFlagSvg = l.TargetLanguage.FlagSvg,
+                VocabCount = l.Vocabularies.Count
+            })
             .ToListAsync();
 
-        var result = new List<VocabularyListSummaryDto>();
-        foreach (var list in lists)
-        {
-            var vocabIds = list.Vocabularies.Select(v => v.Id).ToList();
-            var boxEntries = await db.BoxEntries
-                .Where(b => b.UserId == userId && vocabIds.Contains(b.VocabularyId))
-                .ToListAsync();
+        var boxCounts = await db.BoxEntries
+            .Where(b => b.UserId == userId)
+            .GroupBy(b => new { b.Vocabulary.ListId, b.Box })
+            .Select(g => new { g.Key.ListId, g.Key.Box, Count = g.Count() })
+            .ToListAsync();
 
-            BoxDistributionDto? dist = boxEntries.Count > 0
+        return lists.Select(l =>
+        {
+            var listBoxes = boxCounts.Where(bc => bc.ListId == l.Id).ToList();
+            BoxDistributionDto? dist = listBoxes.Count > 0
                 ? new BoxDistributionDto(
-                    boxEntries.Count(b => b.Box == 1),
-                    boxEntries.Count(b => b.Box == 2),
-                    boxEntries.Count(b => b.Box == 3),
-                    boxEntries.Count(b => b.Box == 4),
-                    boxEntries.Count(b => b.Box == 5))
+                    listBoxes.Where(bc => bc.Box == 1).Select(bc => bc.Count).FirstOrDefault(),
+                    listBoxes.Where(bc => bc.Box == 2).Select(bc => bc.Count).FirstOrDefault(),
+                    listBoxes.Where(bc => bc.Box == 3).Select(bc => bc.Count).FirstOrDefault(),
+                    listBoxes.Where(bc => bc.Box == 4).Select(bc => bc.Count).FirstOrDefault(),
+                    listBoxes.Where(bc => bc.Box == 5).Select(bc => bc.Count).FirstOrDefault())
                 : null;
 
-            result.Add(new VocabularyListSummaryDto(
-                list.Id, list.Name,
-                list.SourceLanguageId, list.SourceLanguage.DisplayName, list.SourceLanguage.FlagSvg,
-                list.TargetLanguageId, list.TargetLanguage.DisplayName, list.TargetLanguage.FlagSvg,
-                list.Vocabularies.Count, dist));
-        }
-
-        return result;
+            return new VocabularyListSummaryDto(
+                l.Id, l.Name,
+                l.SourceLanguageId, l.SourceLanguageName, l.SourceFlagSvg,
+                l.TargetLanguageId, l.TargetLanguageName, l.TargetFlagSvg,
+                l.VocabCount, dist);
+        }).ToList();
     }
 
     public async Task<VocabularyListDto?> GetByIdAsync(int id, int userId)
@@ -90,6 +97,7 @@ public class VocabularyListService(AppDbContext db)
     public async Task<bool> UpdateAsync(int id, int userId, UpdateVocabularyListRequest request)
     {
         var list = await db.VocabularyLists
+            .AsTracking()
             .Where(l => l.Id == id && l.UserId == userId)
             .Include(l => l.Vocabularies)
             .FirstOrDefaultAsync();

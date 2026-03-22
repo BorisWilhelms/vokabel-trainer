@@ -27,7 +27,7 @@ public class LanguageService(AppDbContext db)
 
     public async Task<LanguageDto?> UpdateAsync(int id, UpdateLanguageRequest request)
     {
-        var language = await db.Languages.FindAsync(id);
+        var language = await db.Languages.AsTracking().FirstOrDefaultAsync(l => l.Id == id);
         if (language is null) return null;
         language.Code = request.Code;
         language.DisplayName = request.DisplayName;

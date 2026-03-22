@@ -149,10 +149,10 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
     public async Task<SubmitAnswerResponse> SubmitAnswerAsync(
         int sessionId, int vocabularyId, Direction direction, string answer, double? responseSeconds = null)
     {
-        var session = await db.TrainingSessions.FirstAsync(s => s.Id == sessionId);
+        var session = await db.TrainingSessions.AsTracking().FirstAsync(s => s.Id == sessionId);
         var vocab = await db.Vocabularies.FirstAsync(v => v.Id == vocabularyId);
         var boxEntry = await db.BoxEntries
-            .FirstAsync(b => b.UserId == session.UserId && b.VocabularyId == vocabularyId);
+            .AsTracking().FirstAsync(b => b.UserId == session.UserId && b.VocabularyId == vocabularyId);
 
         var translations = JsonSerializer.Deserialize<List<string>>(vocab.Translations)!;
         var trimmedAnswer = answer.Trim();
@@ -298,7 +298,7 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
 
     public async Task CompleteSessionIfNeededAsync(int sessionId)
     {
-        var session = await db.TrainingSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+        var session = await db.TrainingSessions.AsTracking().FirstOrDefaultAsync(s => s.Id == sessionId);
         if (session is null || session.CompletedAt.HasValue) return;
 
         session.CompletedAt = DateTime.UtcNow;
@@ -317,7 +317,7 @@ public class TrainingService(AppDbContext db, LeitnerService leitner)
 
     public async Task AbortSessionAsync(int sessionId)
     {
-        var session = await db.TrainingSessions.FirstAsync(s => s.Id == sessionId);
+        var session = await db.TrainingSessions.AsTracking().FirstAsync(s => s.Id == sessionId);
         session.CompletedAt = DateTime.UtcNow;
 
         if (session.ListId.HasValue)

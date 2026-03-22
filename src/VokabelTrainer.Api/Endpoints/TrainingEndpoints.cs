@@ -151,6 +151,7 @@ public static class TrainingEndpoints
             if (!submitFeedback.IsCorrect && aiService.IsConfigured)
             {
                 var vocab = await db.Vocabularies
+                    .AsTracking()
                     .Include(v => v.List).ThenInclude(l => l.SourceLanguage)
                     .Include(v => v.List).ThenInclude(l => l.TargetLanguage)
                     .FirstOrDefaultAsync(v => v.Id == vocabId);
@@ -208,6 +209,7 @@ public static class TrainingEndpoints
             var mode = form["Mode"].FirstOrDefault() ?? "";
 
             var vocab = await db.Vocabularies
+                .AsTracking()
                 .Include(v => v.List).ThenInclude(l => l.SourceLanguage)
                 .Include(v => v.List).ThenInclude(l => l.TargetLanguage)
                 .FirstOrDefaultAsync(v => v.Id == vocabId);
