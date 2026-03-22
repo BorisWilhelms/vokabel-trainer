@@ -117,6 +117,26 @@ public static class TrainingEndpoints
             double? responseSeconds = double.TryParse(responseSecondsStr,
                 System.Globalization.CultureInfo.InvariantCulture, out var rs) ? rs : null;
 
+            if (string.IsNullOrWhiteSpace(answer))
+            {
+                var currentQuestion = await trainingService.GetNextQuestionAsync(sessionId);
+                if (currentQuestion is null)
+                {
+                    await trainingService.CompleteSessionIfNeededAsync(sessionId);
+                    ctx.Response.Headers["HX-Redirect"] = $"/training/result/{sessionId}";
+                    return Results.Ok();
+                }
+                var isEndlosEmpty = string.Equals(mode, "Endlos", StringComparison.OrdinalIgnoreCase);
+                return new RazorComponentResult<TrainingContent>(new
+                {
+                    SessionId = sessionId,
+                    Question = currentQuestion,
+                    Feedback = (AnswerFeedback?)null,
+                    Mode = mode,
+                    IsEndlos = isEndlosEmpty,
+                });
+            }
+
             if (!int.TryParse(vocabIdStr, out var vocabId) || !int.TryParse(directionStr, out var dirInt))
             {
                 return Results.Redirect($"/training/{sessionId}?mode={mode}");

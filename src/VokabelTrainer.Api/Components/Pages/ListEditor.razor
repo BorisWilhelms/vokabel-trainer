@@ -5,7 +5,7 @@
         <div class="field">
             <label class="label" for="name-input">Name</label>
             <div class="control">
-                <input id="name-input" class="input" type="text" name="Name" value="@Name" />
+                <input id="name-input" class="input" type="text" name="Name" value="@Name" required />
             </div>
         </div>
 
@@ -13,8 +13,8 @@
             <label class="label">Ausgangssprache</label>
             <div class="control">
                 <div class="select is-fullwidth">
-                    <select name="SourceLanguageId">
-                        <option value="0">-- Sprache wählen --</option>
+                    <select name="SourceLanguageId" required>
+                        <option value="">-- Sprache wählen --</option>
                         @if (Languages is not null)
                         {
                             @foreach (var lang in Languages)
@@ -31,8 +31,8 @@
             <label class="label">Zielsprache</label>
             <div class="control">
                 <div class="select is-fullwidth">
-                    <select name="TargetLanguageId">
-                        <option value="0">-- Sprache wählen --</option>
+                    <select name="TargetLanguageId" required>
+                        <option value="">-- Sprache wählen --</option>
                         @if (Languages is not null)
                         {
                             @foreach (var lang in Languages)
@@ -67,7 +67,7 @@
             <label class="label" for="vocabulary-textarea">Vokabeln</label>
             <div class="control">
                 <textarea id="vocabulary-textarea" class="textarea" rows="10" name="RawVocabulary"
-                          placeholder="Eine Vokabel pro Zeile: Begriff = Übersetzung1, Übersetzung2">@RawVocabulary</textarea>
+                          placeholder="Eine Vokabel pro Zeile: Begriff = Übersetzung1, Übersetzung2" required>@RawVocabulary</textarea>
             </div>
         </div>
 
